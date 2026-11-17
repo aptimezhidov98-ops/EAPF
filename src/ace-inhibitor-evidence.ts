@@ -501,7 +501,7 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
   const has = (...items: string[]) => items.some(item => selected.includes(item))
   const hasHf = has('Сердечная недостаточность со сниженной ФВ')
   const hasUnspecifiedHf = has('Хроническая сердечная недостаточность') && !hasHf
-  const hasCkd = has('Хроническая болезнь почек')
+  const hasCkd = has('Хроническая болезнь почек', 'Программный гемодиализ')
   const hasDiabetes = has('Сахарный диабет 1 типа', 'Сахарный диабет 2 типа')
   const hasCvdRisk = has('Ишемическая болезнь сердца', 'Состояние после инфаркта миокарда', 'Заболевание периферических артерий', 'Перенесённый инсульт / ТИА')
   const hasStroke = has('Перенесённый инсульт / ТИА')
