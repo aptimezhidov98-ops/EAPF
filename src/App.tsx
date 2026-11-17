@@ -119,24 +119,25 @@ export default function App() {
        {!aceComparison.hasAceIndication&&<div className="match-alert">По выбранным данным пока не установлено показание для сравнения иАПФ. Сначала подтвердите диагноз или синдром.</div>}
        {aceComparison.hasAceIndication&&!aceComparison.canCompare&&<div className="match-alert danger">Ранжирование остановлено из-за критического фактора безопасности. Требуется клиническая оценка.</div>}
        {aceComparison.canCompare&&eapfAceRecommendations.length===0&&<div className="match-alert">Для этой комбинации пока недостаточно проверенных данных, чтобы сформировать рейтинг препаратов.</div>}
-       {aceComparison.canCompare&&eapfAceRecommendations.map((recommendation,index)=>{
-        const scored=recommendation.candidates.map(drug=>({...drug,rankScore:Math.max(0,...drug.studies.map(study=>study.relevance==='high'?3:study.relevance==='moderate'?2:study.relevance==='limited'?1:0))}));
-        const ordered=[...scored].sort((a,b)=>b.rankScore-a.rankScore);
-        const groups=[...new Set(ordered.map(item=>item.rankScore))];
-        return <section className="eapf-context" key={recommendation.heading}>
-         <div className="eapf-context-heading"><div><h3>{recommendation.heading}</h3><p>{recommendation.summary}</p></div></div>
-         {ordered.length>0?<div className="ranked-drug-list">{ordered.map(drug=>{
-          const rank=groups.indexOf(drug.rankScore)+1;
-          const same=ordered.filter(item=>item.rankScore===drug.rankScore).length>1;
-          return <article className="ranked-drug" key={drug.id}>
-           <div className="ranked-drug-top"><span className="rank-number">{'Место '+rank+(same?' · совместно':'')}</span><span className="rank-level">{drug.rankScore===3?'Высокая доказательная поддержка':drug.rankScore===2?'Умеренная поддержка':drug.rankScore===1?'Ограниченные данные':'Данные не установлены'}</span></div>
-           <h4>{drug.inn}</h4><p>{drug.shortConclusion}</p>
-           <div className="drug-source-links"><a href={drug.doseSource} target="_blank" rel="noreferrer">Инструкция ↗</a>{drug.studies.slice(0,3).map(study=><a key={study.id} href={study.url} target="_blank" rel="noreferrer">{study.title} ↗</a>)}</div>
-          </article>
+       {aceComparison.canCompare&&(()=>{
+        const merged=new Map<string,any>();
+        eapfAceRecommendations.forEach(recommendation=>recommendation.candidates.forEach(drug=>{
+         const existing=merged.get(drug.id);
+         if(existing){existing.contexts.push(recommendation.heading);existing.studies=[...new Map([...existing.studies,...drug.studies].map(study=>[study.id,study])).values()]}
+         else merged.set(drug.id,{...drug,contexts:[recommendation.heading]});
+        }));
+        const scored=[...merged.values()].map(drug=>({...drug,rankScore:Math.max(0,...drug.studies.map((study:any)=>study.relevance==='high'?3:study.relevance==='moderate'?2:study.relevance==='limited'?1:0))})).sort((a,b)=>b.rankScore-a.rankScore);
+        const groups=[...new Set(scored.map(item=>item.rankScore))];
+        return <section className="eapf-context"><div className="eapf-context-heading"><div><h3>Общий рейтинг для выбранного клинического случая</h3><p>Повторяющиеся препараты объединены. Рейтинг отражает уровень и прямоту доказательств, а не гарантирует индивидуальную эффективность.</p></div></div>
+         {scored.length?<div className="ranked-drug-list">{scored.map(drug=>{
+          const rank=groups.indexOf(drug.rankScore)+1;const same=scored.filter(item=>item.rankScore===drug.rankScore).length>1;
+          return <article className="ranked-drug" key={drug.id}><div className="ranked-drug-top"><span className="rank-number">{'Место '+rank+(same?' · совместно':'')}</span><span className="rank-level">{drug.rankScore===3?'Высокая доказательная поддержка':drug.rankScore===2?'Умеренная поддержка':drug.rankScore===1?'Ограниченные данные':'Данные не установлены'}</span></div>
+           <h4>{drug.inn}</h4><p>{drug.shortConclusion}</p><p className="rank-context">Релевантные профили: {drug.contexts.join(' · ')}</p>
+           <div className="drug-source-links"><a href={drug.doseSource} target="_blank" rel="noreferrer">Инструкция ↗</a>{drug.studies.slice(0,3).map((study:any)=><a key={study.id} href={study.url} target="_blank" rel="noreferrer">{study.title} ↗</a>)}</div></article>
          })}</div>:<p className="reference-empty">Для этого профиля нет отдельных молекул, которые можно обоснованно ранжировать.</p>}
-         <p className="eapf-interpretation">{recommendation.interpretation}</p>
-        </section>
-       })}
+         {eapfAceRecommendations.map(recommendation=><p className="eapf-interpretation" key={recommendation.heading}>{recommendation.interpretation}</p>)}
+        </section>;
+       })()}
       </div>:<div className="russian-recommendation-view">
        <div className="reference-intro"><b>Препараты по клиническим рекомендациям РФ</b><p>Показаны только лекарственные классы и препараты, которые можно подтвердить по имеющимся привязкам к российским КР. Если конкретное МНН в источнике не выделено, система не будет его придумывать.</p></div>
        {patientRecommendations.length?patientRecommendations.map(item=><article className="ru-drug-line" key={item.id}><h3>{item.title}</h3><p>{item.appliesTo.filter(condition=>selected.includes(condition)).join(' · ')}</p><b>{item.id.includes('ru-ah')?'Ингибиторы АПФ — один из рекомендованных классов; конкретное МНН не ранжируется.':item.id.includes('ru-ckd')?'Ингибитор АПФ или БРА при соответствующей альбуминурии и показаниях; конкретное МНН в привязке не выделено.':item.id.includes('ru-chf')?'Ингибиторы АПФ как класс при соответствующем фенотипе ХСН; конкретное МНН требует сверки с действующей редакцией КР.':'Ингибиторы АПФ при наличии соответствующих показаний; конкретное МНН в привязке не выделено.'}</b></article>):<p className="reference-empty">Для выбранных состояний пока нет проверенной привязки к российским клиническим рекомендациям.</p>}
