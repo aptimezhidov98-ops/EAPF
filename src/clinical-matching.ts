@@ -141,12 +141,16 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
     ? egfrValue >= 90 ? 'G1' : egfrValue >= 60 ? 'G2' : egfrValue >= 45 ? 'G3a' : egfrValue >= 30 ? 'G3b' : egfrValue >= 15 ? 'G4' : 'G5'
     : null
   const medicationText = (patient.medications || '').toLowerCase()
+  const bpMatch = (patient.blood_pressure || '').match(/(\\d{2,3})\\s*[/]\\s*(\\d{2,3})/)
+  const systolicBp = bpMatch ? Number(bpMatch[1]) : null
+  const diastolicBp = bpMatch ? Number(bpMatch[2]) : null
   const usesArni = medicationText.includes('сакубитрил') || medicationText.includes('энтресто') || medicationText.includes('entresto')
   const usesArb = ['лозартан','валсартан','кандесартан','телмисартан','ирбесартан','олмесартан','эпросартан'].some(name => medicationText.includes(name))
   const alreadyUsesAce = ['рамиприл','эналаприл','периндоприл','лизиноприл','каптоприл','фозиноприл','трандолаприл','зофеноприл'].some(name => medicationText.includes(name))
   const usesPotassiumRiskMedicine = ['спиронолактон','эплеренон','амилорид','триамтерен','калия','калий'].some(name => medicationText.includes(name))
   const usesNsaid = ['ибупрофен','диклофенак','напроксен','кеторолак','мелоксикам','нимесулид','целекоксиб'].some(name => medicationText.includes(name))
   const usesLithium = medicationText.includes('литий') || medicationText.includes('лития')
+  const usesDri = medicationText.includes('алискирен') || medicationText.includes('расилез')
   const weightKg = Number(patient.weight)
   const heightCm = Number(patient.height)
   const bmi = weightKg > 0 && heightCm > 0 ? Number((weightKg / ((heightCm / 100) ** 2)).toFixed(1)) : null
@@ -156,6 +160,8 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
   const hardStop = urgentSymptom || usesArni || pediatricPatient || has(selected, 'Беременность или её планирование', 'Ангионевротический отёк в анамнезе', 'Двусторонний стеноз почечных артерий / стеноз артерии единственной почки') || potassium >= 5.5
   const adultDosingAllowed = Number.isFinite(ageYears) && ageYears >= 18 && !hardStop && !breastfeeding
   const caution = [
+    ...(systolicBp !== null && systolicBp < 90 ? ['Введено систолическое АД ниже 90 мм рт. ст.: требуется клиническая оценка гипотонии и гемодинамики до выбора/титрации иАПФ.'] : []),
+    ...(systolicBp !== null && (systolicBp >= 180 || (diastolicBp !== null && diastolicBp >= 120)) ? ['Введено очень высокое АД (САД ≥180 или ДАД ≥120 мм рт. ст.): требуется быстрая клиническая оценка, включая поиск симптомов поражения органов-мишеней; модуль не определяет гипертоническое неотложное состояние.'] : []),
     ...(breastfeeding ? ['Грудное вскармливание: ограничения зависят от конкретного иАПФ и возраста/состояния ребёнка; взрослые дозовые сведения скрыты до проверки инструкции выбранного продукта.'] : []),
     ...(has(selected, 'Гиперкалиемия') ? ['Выбрана гиперкалиемия: необходимо проверить фактический калий и причину нарушения; при выраженном повышении алгоритм останавливает сопоставление.'] : []),
     ...(has(selected, 'Обезвоживание / гиповолемия') ? ['Отмечена гиповолемия: повышен риск выраженной гипотонии и ухудшения функции почек после начала блокады РААС.'] : []),
@@ -173,6 +179,7 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
     ...(usesPotassiumRiskMedicine ? ['В списке лекарств обнаружено средство, потенциально повышающее калий (например, спиронолактон/эплеренон/калийсодержащий препарат): необходим контроль калия и функции почек.'] : []),
     ...(usesNsaid ? ['В списке лекарств обнаружено название НПВП. Проверить риск ухудшения функции почек и гиперкалиемии, особенно при ХБП, диуретике или гиповолемии.'] : []),
     ...(usesLithium ? ['В списке лекарств обнаружен литий: иАПФ могут повышать его концентрацию; требуется отдельная оценка взаимодействия и мониторинг.'] : []),
+    ...(usesDri ? ['В списке лекарств обнаружен алискирен/прямой ингибитор ренина. Проверить противопоказанные или не рекомендованные комбинации с иАПФ/БРА; при диабете или ХБП двойная блокада РААС не должна предполагаться автоматически.'] : []),
   ]
   const evidence = (profile: DrugProfile) => {
     const studies = profile.studyEvidence.filter(study => {
@@ -241,7 +248,9 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
     acrNeedsCkdConfirmation: acrCategory !== null && !hasCkdDiagnosis,
     acrRaw,
     renalMonitoring: hasCkdDiagnosis ? 'KDIGO 2024: после начала иАПФ/БРА или увеличения дозы следует проверить АД, креатинин и калий в течение 2–4 недель; точный срок зависит от рСКФ и исходного калия.' : null,
-    interactionWarnings: caution.filter(item => /списке лекарств|лити[йя]|НПВП|БРА/i.test(item)),
+    interactionWarnings: caution.filter(item => /списке лекарств|лити[йя]|НПВП|БРА|алискирен/i.test(item)),
+    systolicBp,
+    diastolicBp,
     hasAceIndication,
     candidates: hasAceIndication && !hardStop ? profiles.map(profile => ({
       ...profile,
