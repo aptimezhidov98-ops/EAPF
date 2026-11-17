@@ -131,11 +131,12 @@ export default function App() {
           profiles.forEach(drug=>grouped.set(drug.group,[...(grouped.get(drug.group)||[]),drug]));
           const combinationLinks=fixedCombinations.filter(combo=>{
            const ids=profiles.map(drug=>drug.id);
-           return (combo.name==='Exforge'&&ids.includes('amlodipine')&&ids.includes('valsartan'))||
-            (combo.name==='Twynsta'&&ids.includes('amlodipine')&&ids.includes('telmisartan'))||
-            (combo.name==='Hyzaar'&&ids.includes('losartan')&&ids.includes('hydrochlorothiazide'))||
-            (combo.name==='MicardisPlus'&&ids.includes('telmisartan')&&ids.includes('hydrochlorothiazide'))||
-            (combo.name==='Exforge HCT'&&ids.includes('amlodipine')&&ids.includes('valsartan')&&ids.includes('hydrochlorothiazide'));
+           const rasChoice=item.drugIds.some(id=>/ACEI|иАПФ|ARB|БРА|блокатор РААС/i.test(id));
+           return (combo.name==='Exforge'&&ids.includes('amlodipine')&&(ids.includes('valsartan')||rasChoice))||
+            (combo.name==='Twynsta'&&ids.includes('amlodipine')&&(ids.includes('telmisartan')||rasChoice))||
+            (combo.name==='Hyzaar'&&ids.includes('hydrochlorothiazide')&&(ids.includes('losartan')||rasChoice))||
+            (combo.name==='MicardisPlus'&&ids.includes('hydrochlorothiazide')&&(ids.includes('telmisartan')||rasChoice))||
+            (combo.name==='Exforge HCT'&&ids.includes('amlodipine')&&ids.includes('hydrochlorothiazide')&&rasChoice);
           });
           const sourceStudies=item.sources.map(id=>allAntihypertensiveStudies.find(study=>study.id===id)).filter((study):study is typeof allAntihypertensiveStudies[number]=>Boolean(study));
           return <article className="strategy-card combination-card" key={item.title}>
