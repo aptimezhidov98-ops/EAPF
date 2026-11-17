@@ -15,3 +15,6 @@
 .evidence-status{display:inline-block;background:#edf4f1;color:#376e60;border-radius:5px;padding:4px 6px;font-size:9px;font-weight:700;line-height:1.4}.comparison-table td p{margin:6px 0 0}
 
 .evidence-link{display:inline-block;margin:3px 5px 2px 0;color:#28685d;font-size:9px;font-weight:700;text-decoration:none;white-space:nowrap}.evidence-link:hover{text-decoration:underline}
+
+.renal-monitoring{background:#f4f7f5;border-left:2px solid #7ca99c;padding:9px 11px!important;border-radius:6px;color:#58716a!important;font-size:10px!important}
+.renal-monitoring a{display:inline-block;color:#28685d;font-weight:700;text-decoration:none;margin-left:4px}
