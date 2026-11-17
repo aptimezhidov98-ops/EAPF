@@ -197,41 +197,48 @@ export default function App() {
           return <details className="strategy-card combination-card combination-details" key={item.title}>
            <summary className="combination-summary"><span className="strategy-priority">{'Приоритет '+item.priority}</span><span className="combination-summary-title">{displayTitle}</span><span className="combination-chevron">⌄</span></summary>
            <div className="combination-expanded">
-            <div className="combination-detail-section"><h4>Почему эта комбинация обоснована в данном случае</h4><p>{clinicalWhy}</p><p><b>Механизм:</b> {mechanism}</p></div>
-            <div className="combination-detail-section"><h4>Препараты, дозы и титрация</h4>
-             <div className="combination-dose-list">
-              {rasChoice&&<div className="combination-dose-group">
-               <div className="combination-dose-group-title">Блокатор РААС — выбрать только один: иАПФ ИЛИ сартан</div>
-               <p className="dose-caveat">Не сочетать иАПФ с сартаном. Ниже представлены альтернативные молекулы, а не компоненты одной схемы.</p>
-               {antihypertensiveDrugProfiles.filter(drug=>drug.group==='Сартаны').map(drug=>{
-                const guide=doseGuides[drug.id];
-                return <div className="combination-dose-row" key={drug.id}><div className="combination-dose-name"><b>{drug.name}</b><span>{guide?('Старт: '+guide.start+' · Максимум: '+guide.maximum):drug.dose}</span></div><div className="combination-dose-links"><a href={drug.instructionUrl} target="_blank" rel="noreferrer">Инструкция ↗</a>{drug.studies.map(study=><a key={study.id} href={study.url} target="_blank" rel="noreferrer">{study.title} ↗</a>)}</div>{guide&&<details className="dose-expand"><summary>Диапазон доз и титрация</summary><div><p><b>Обычный диапазон:</b> {guide.usual}</p><p><b>Шаг титрации:</b> {guide.titration}</p><p><b>Интервал:</b> {guide.interval}</p><p className="dose-caveat">{guide.context}</p></div></details>}</div>
-               })}
-               {aceDrugEvidence.map(drug=><div className="combination-dose-row" key={drug.id}><div className="combination-dose-name"><b>{drug.inn}</b><span>{drug.hypertensionDose}</span></div><div className="combination-dose-links"><a href={drug.doseSource} target="_blank" rel="noreferrer">Инструкция ↗</a>{drug.studies.slice(0,3).map(study=><a key={study.id} href={study.url} target="_blank" rel="noreferrer">{study.title} ↗</a>)}</div></div>)}
-              </div>}
-              {[...grouped.entries()].map(([group,drugs])=><div className="combination-dose-group" key={group}>
-               <div className="combination-dose-group-title">{drugs.length>1?'Выбрать один препарат из группы: '+group:group}</div>
-               {drugs.map(drug=>{
-                const guide=doseGuides[drug.id];
-                return <div className="combination-dose-row" key={drug.id}>
-                 <div className="combination-dose-name"><b>{drug.name}</b><span>{guide?('Старт: '+guide.start+' · Максимум: '+guide.maximum):drug.dose}</span></div>
-                 <div className="combination-dose-links"><a href={drug.instructionUrl} target="_blank" rel="noreferrer">Инструкция ↗</a>{drug.studies.map(study=><a key={study.id} href={study.url} target="_blank" rel="noreferrer">{study.title} ↗</a>)}</div>
-                 {guide&&<details className="dose-expand"><summary>Диапазон доз и титрация</summary><div><p><b>Обычный диапазон:</b> {guide.usual}</p><p><b>Максимум:</b> {guide.maximum}</p><p><b>Шаг титрации:</b> {guide.titration}</p><p><b>Интервал:</b> {guide.interval}</p><p className="dose-caveat">{guide.context}</p></div></details>}
-                </div>
-               })}
-              </div>)}
-              {item.drugIds.filter(id=>!antihypertensiveDrugProfiles.some(drug=>drug.id===id)&&! /ACEI|иАПФ|ARB|БРА|блокатор РААС/i.test(id)).map(id=><div className="combination-unresolved" key={id}>{id}</div>)}
+            <div className="combination-drug-columns">
+             {rasChoice&&<div className="combination-drug-column">
+              <h4>Блокатор РААС</h4><p className="combination-column-hint">Выбрать один препарат: иАПФ ИЛИ сартан</p>
+              {antihypertensiveDrugProfiles.filter(drug=>drug.group==='Сартаны').map(drug=>{
+               const guide=doseGuides[drug.id];
+               return <details className="combination-drug-item" key={drug.id}>
+                <summary>{drug.name}</summary>
+                <div className="combination-drug-info"><p>{drug.rationale}</p><p><b>Доза:</b> {guide?('Старт '+guide.start+'; обычная '+guide.usual+'; максимум '+guide.maximum):drug.dose}</p>{guide&&<><p><b>Титрация:</b> {guide.titration}; интервал {guide.interval}</p><p className="dose-caveat">{guide.context}</p></>}<div className="combination-drug-links"><a href={drug.instructionUrl} target="_blank" rel="noreferrer">Инструкция ↗</a>{drug.studies.map(study=><a key={study.id} href={study.url} target="_blank" rel="noreferrer">{study.title} ↗</a>)}</div></div>
+               </details>
+              })}
+              {aceDrugEvidence.map(drug=><details className="combination-drug-item" key={drug.id}>
+               <summary>{drug.inn}</summary><div className="combination-drug-info"><p><b>Доза при АГ:</b> {drug.hypertensionDose}</p><div className="combination-drug-links"><a href={drug.doseSource} target="_blank" rel="noreferrer">Инструкция / источник дозы ↗</a>{drug.studies.slice(0,3).map(study=><a key={study.id} href={study.url} target="_blank" rel="noreferrer">{study.title} ↗</a>)}</div></div>
+              </details>)}
+             </div>}
+             {[...grouped.entries()].filter(([group])=>!(rasChoice&&group==='Сартаны')).map(([group,drugs])=><div className="combination-drug-column" key={group}>
+              <h4>{group}</h4><p className="combination-column-hint">{drugs.length>1?'Выбрать один препарат из этой группы':'Препарат этой группы'}</p>
+              {drugs.map(drug=>{
+               const guide=doseGuides[drug.id];
+               return <details className="combination-drug-item" key={drug.id}>
+                <summary>{drug.name}</summary>
+                <div className="combination-drug-info"><p>{drug.rationale}</p><p><b>Доза:</b> {guide?('Старт '+guide.start+'; обычная '+guide.usual+'; максимум '+guide.maximum):drug.dose}</p>{guide&&<><p><b>Титрация:</b> {guide.titration}; интервал {guide.interval}</p><p className="dose-caveat">{guide.context}</p></>}<div className="combination-drug-links"><a href={drug.instructionUrl} target="_blank" rel="noreferrer">Инструкция ↗</a>{drug.studies.map(study=><a key={study.id} href={study.url} target="_blank" rel="noreferrer">{study.title} ↗</a>)}</div></div>
+               </details>
+              })}
+             </div>)}
+            </div>
+            {item.drugIds.filter(id=>!antihypertensiveDrugProfiles.some(drug=>drug.id===id)&&! /ACEI|иАПФ|ARB|БРА|блокатор РААС/i.test(id)).map(id=><div className="combination-unresolved" key={id}>{id}</div>)}
+            <details className="combination-more-details">
+             <summary>Почему эта комбинация обоснована в данном случае</summary>
+             <div className="combination-more-content"><p>{clinicalWhy}</p><p><b>Механизм действия:</b> {mechanism}</p></div>
+            </details>
+            <details className="combination-more-details">
+             <summary>Кратко об исследованиях</summary>
+             <div className="combination-more-content">
+              {combinationSpecific.length>0&&<div className="study-scope-label">Прямое исследование комбинации</div>}
+              {combinationSpecific.map(study=><div className="combination-study-summary" key={study.id}><b>{study.title} ({study.year})</b><p>{study.result}</p><p className="dose-caveat">Ограничение: {study.limits}</p><a href={study.url} target="_blank" rel="noreferrer">Публикация ↗</a></div>)}
+              {strategyStudies.length>0&&<div className="study-scope-label">Данные стратегии лечения</div>}
+              {strategyStudies.map(study=><div className="combination-study-summary" key={study.id}><b>{study.title} ({study.year})</b><p>{study.result}</p><p className="dose-caveat">Ограничение: {study.limits}</p><a href={study.url} target="_blank" rel="noreferrer">Публикация ↗</a></div>)}
+              {componentStudies.length>0&&<div className="combination-study-summary"><b>Доказательства отдельных компонентов / класса</b><p>Эти данные поддерживают применение компонентов в изученных популяциях, но не доказывают преимущество именно этой комбинации.</p>{componentStudies.map(study=><div key={study.id}><b>{study.title} ({study.year})</b><p>{study.result}</p><p className="dose-caveat">Ограничение: {study.limits}</p><a href={study.url} target="_blank" rel="noreferrer">Публикация ↗</a></div>)}</div>}
+              {sourceStudies.length===0&&<p className="dose-caveat">Для этой схемы нет привязанного исследования комбинации. Нельзя переносить результаты отдельных компонентов на комбинацию целиком.</p>}
              </div>
-            </div>
-            <div className="combination-detail-section"><h4>Кратко об исследованиях</h4>
-             {combinationSpecific.length>0&&<div className="study-scope-label">Прямое исследование комбинации</div>}
-             {combinationSpecific.map(study=><div className="combination-study-summary" key={study.id}><b>{study.title} ({study.year})</b><p>{study.result}</p><p className="dose-caveat">Ограничение: {study.limits}</p><a href={study.url} target="_blank" rel="noreferrer">Публикация ↗</a></div>)}
-             {strategyStudies.length>0&&<div className="study-scope-label">Данные стратегии лечения (не изолированной таблетки)</div>}
-             {strategyStudies.map(study=><div className="combination-study-summary" key={study.id}><b>{study.title} ({study.year})</b><p>{study.result}</p><p className="dose-caveat">Ограничение: {study.limits}</p><a href={study.url} target="_blank" rel="noreferrer">Публикация ↗</a></div>)}
-             {componentStudies.length>0&&<div className="combination-study-summary"><b>Доказательства отдельных компонентов / класса</b><p>Эти исследования поддерживают применение соответствующего компонента или класса в изученной популяции, но сами по себе не доказывают преимущество именно этой комбинации.</p>{componentStudies.map(study=><div key={study.id}><b>{study.title} ({study.year})</b><p>{study.result}</p><p className="dose-caveat">Ограничение: {study.limits}</p><a href={study.url} target="_blank" rel="noreferrer">Публикация ↗</a></div>)}</div>}
-             {sourceStudies.length===0&&<p className="dose-caveat">Для этой конкретной схемы в текущей базе нет привязанного исследования комбинации. Не следует переносить результаты отдельных компонентов на комбинацию целиком.</p>}
-            </div>
-            {combinationLinks.length>0&&<div className="combination-detail-section fixed-combination-list"><b>Примеры фиксированных комбинаций</b>{combinationLinks.map(combo=><div key={combo.name}><span><b>{combo.name}</b> · {combo.ingredients} · {combo.strengths.join('; ')} мг</span><small>{combo.jurisdiction}. {combo.note}</small><a href={combo.source} target="_blank" rel="noreferrer">Официальная инструкция ↗</a></div>)}</div>}
+            </details>
+            {combinationLinks.length>0&&<details className="combination-more-details"><summary>Примеры фиксированных комбинаций</summary><div className="combination-more-content fixed-combination-list">{combinationLinks.map(combo=><div key={combo.name}><span><b>{combo.name}</b> · {combo.ingredients} · {combo.strengths.join('; ')} мг</span><small>{combo.jurisdiction}. {combo.note}</small><a href={combo.source} target="_blank" rel="noreferrer">Официальная инструкция ↗</a></div>)}</div></details>}
             {item.restriction&&<p className="strategy-restriction">{item.restriction}</p>}
            </div>
           </details>
