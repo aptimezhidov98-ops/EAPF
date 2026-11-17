@@ -802,7 +802,7 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
   }
   if (hasPriorMi) {
     const postMiCandidates = [
-      ...(has('Сердечная недостаточность со сниженной ФВ') ? ['ramipril'] : []),
+      ...(has('Сердечная недостаточность со сниженной ФВ') || (lvef !== null && lvef < 45) ? ['ramipril'] : []),
       ...(lvef !== null && lvef <= 40 ? ['captopril'] : []),
       ...(lvef !== null && lvef <= 35 ? ['trandolapril'] : []),
       ...(lvef !== null && lvef < 45 ? ['zofenopril'] : []),
@@ -813,7 +813,7 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
         ? 'Для привязки постинфарктных РКИ требуется ФВ ЛЖ и наличие/отсутствие клинической СН. Введите ФВ ЛЖ или уточните ХСНнФВ; без этого конкретные молекулы не ранжируются.'
         : 'Постинфарктные исследования различались по фенотипу: AIRE — клиническая СН после ИМ; SAVE — ФВ ЛЖ ≤40%; TRACE — ФВ ЛЖ ≤35%; SMILE-4 напрямую сравнивал зофеноприл с рамиприлом при дисфункции ЛЖ после ИМ на фоне АСК.',
       candidates: cards(postMiCandidates, {
-        ramipril: ['aire-1993','smile4-zofenopril-ramipril-2012','smile4-followup-2017','ace-postmi-cohort-2004'], captopril: ['save-1992'], trandolapril: ['trace-1995'], zofenopril: ['smile4-zofenopril-ramipril-2012','smile4-followup-2017','smile-pooled-2015']
+        ramipril: [...(has('Сердечная недостаточность со сниженной ФВ') ? ['aire-1993'] : []), ...(lvef !== null && lvef < 45 ? ['smile4-zofenopril-ramipril-2012','smile4-followup-2017'] : []), 'ace-postmi-cohort-2004'], captopril: ['save-1992'], trandolapril: ['trace-1995'], zofenopril: ['smile4-zofenopril-ramipril-2012','smile4-followup-2017','smile-pooled-2015']
       }),
       interpretation: 'AIRE, SAVE и TRACE сравнивали отдельные молекулы с плацебо в разных фенотипах. SMILE-4 — прямое сравнение зофеноприла и рамиприла: композитная точка была ниже преимущественно за счёт госпитализаций, статистически значимого снижения смертности не показано. Выбор зависит от ФВ ЛЖ, клинической СН, времени после ИМ, АСК, гемодинамики и современной фоновой терапии; SMILE-4 не доказывает универсального превосходства зофеноприла.'
     })
