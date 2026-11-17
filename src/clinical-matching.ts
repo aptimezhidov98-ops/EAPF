@@ -117,13 +117,32 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
   const highRiskCombination = hasDiabetes && (hasHypertension || hasCkd || hasCad)
   const potassium = Number(patient.potassium)
   const acuteMiHours = Number(patient.mi_hours)
-  const hardStop = has(selected, 'Беременность или её планирование', 'Ангионевротический отёк в анамнезе', 'Двусторонний стеноз почечных артерий / стеноз артерии единственной почки', 'Грудное вскармливание') || potassium >= 5.5
+  const medicationText = (patient.medications || '').toLowerCase()
+  const usesArni = medicationText.includes('сакубитрил') || medicationText.includes('энтресто') || medicationText.includes('entresto')
+  const usesArb = ['лозартан','валсартан','кандесартан','телмисартан','ирбесартан','олмесартан','эпросартан'].some(name => medicationText.includes(name))
+  const alreadyUsesAce = ['рамиприл','эналаприл','периндоприл','лизиноприл','каптоприл','фозиноприл','трандолаприл','зофеноприл'].some(name => medicationText.includes(name))
+  const usesPotassiumRiskMedicine = ['спиронолактон','эплеренон','амилорид','триамтерен','калия','калий'].some(name => medicationText.includes(name))
+  const usesNsaid = ['ибупрофен','диклофенак','напроксен','кеторолак','мелоксикам','нимесулид','целекоксиб'].some(name => medicationText.includes(name))
+  const usesLithium = medicationText.includes('литий') || medicationText.includes('лития')
+  const weightKg = Number(patient.weight)
+  const heightCm = Number(patient.height)
+  const bmi = weightKg > 0 && heightCm > 0 ? Number((weightKg / ((heightCm / 100) ** 2)).toFixed(1)) : null
+  const urgentSymptom = has(selected, 'Боль в груди в настоящее время', 'Одышка в покое')
+  const hardStop = urgentSymptom || usesArni || has(selected, 'Беременность или её планирование', 'Ангионевротический отёк в анамнезе', 'Двусторонний стеноз почечных артерий / стеноз артерии единственной почки', 'Грудное вскармливание') || potassium >= 5.5
   const caution = [
     ...(has(selected, 'Гиперкалиемия') ? ['Выбрана гиперкалиемия: необходимо проверить фактический калий и причину нарушения; при выраженном повышении алгоритм останавливает сопоставление.'] : []),
     ...(has(selected, 'Обезвоживание / гиповолемия') ? ['Отмечена гиповолемия: повышен риск выраженной гипотонии и ухудшения функции почек после начала блокады РААС.'] : []),
     ...(has(selected, 'Ортостатическая гипотензия') ? ['Отмечена ортостатическая гипотензия: необходима оценка гемодинамики и причин до выбора препарата и дозы.'] : []),
     ...(Number(patient.egfr) > 0 && Number(patient.egfr) < 30 ? ['рСКФ ниже 30 мл/мин/1,73 м²: требуется отдельная проверка дозирования и мониторинга по инструкции каждого препарата.'] : []),
     ...(Number.isFinite(potassium) && potassium >= 5.0 && potassium < 5.5 ? ['Введён калий 5,0–5,4 ммоль/л: требуется клиническая оценка и повторная проверка до выбора и титрации иАПФ.'] : []),
+    ...(has(selected, 'Сухой кашель на фоне ранее назначенного иАПФ') ? ['Сухой кашель на фоне прежнего иАПФ: это может указывать на непереносимость класса; подбор другой молекулы иАПФ не следует считать автоматическим решением.'] : []),
+    ...(has(selected, 'Головокружение при вставании', 'Обмороки / предобморочные состояния') ? ['Симптомы возможной ортостатической гипотензии: оценить АД лёжа/стоя, объёмный статус и текущую терапию.'] : []),
+    ...(has(selected, 'Одышка при нагрузке', 'Ортопноэ / ночные приступы удушья', 'Отёки нижних конечностей') ? ['Отмечены симптомы, требующие клинической оценки на предмет сердечной недостаточности и других причин; симптомы сами по себе не считаются подтверждённым диагнозом.'] : []),
+    ...(usesArb ? ['В списке лекарств обнаружено название БРА. Проверить, не предполагается ли одновременное применение с иАПФ: такая двойная блокада обычно не рекомендуется из-за риска гипотонии, гиперкалиемии и ухудшения функции почек.'] : []),
+    ...(alreadyUsesAce ? ['В списке лекарств обнаружено название иАПФ. Не добавлять второй иАПФ; проверить текущую молекулу, дозу, показание и переносимость.'] : []),
+    ...(usesPotassiumRiskMedicine ? ['В списке лекарств обнаружено средство, потенциально повышающее калий (например, спиронолактон/эплеренон/калийсодержащий препарат): необходим контроль калия и функции почек.'] : []),
+    ...(usesNsaid ? ['В списке лекарств обнаружено название НПВП. Проверить риск ухудшения функции почек и гиперкалиемии, особенно при ХБП, диуретике или гиповолемии.'] : []),
+    ...(usesLithium ? ['В списке лекарств обнаружен литий: иАПФ могут повышать его концентрацию; требуется отдельная оценка взаимодействия и мониторинг.'] : []),
   ]
   const evidence = (profile: DrugProfile) => {
     const studies = profile.studyEvidence.filter(study => {
@@ -159,7 +178,10 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
   return {
     hasClinicalInput: selected.length > 0 || Object.values(patient).some(value => value.trim()),
     hardStop,
+    urgentSymptom,
     caution,
+    bmi,
+    interactionWarnings: caution.filter(item => /списке лекарств|лити[йя]|НПВП|БРА/i.test(item)),
     candidates: profiles.map(profile => ({
       ...profile,
       ...evidence(profile),
