@@ -137,7 +137,7 @@ export default function App() {
         })}</div>
        </section>}
        {antihypertensiveRankings.notes.map((note,index)=><div className="match-alert" key={'ranking-note-'+index}>{note}</div>)}
-       <details className="plan-details">
+       {(antihypertensivePlan.items.length>0||antihypertensivePlan.hasHypertension)&&<details className="plan-details">
         <summary>Посмотреть варианты комбинаций и дополнительные ограничения</summary>
        {(antihypertensivePlan.items.length>0||antihypertensivePlan.hasHypertension)&&<section className="clinical-plan">
         <div className="clinical-plan-heading"><div><span className="plan-kicker">ПОДБОР ВСЕХ ОСНОВНЫХ КЛАССОВ</span><h3>Антигипертензивная стратегия для этого случая</h3><p>{antihypertensivePlan.summary}</p></div></div>
@@ -151,7 +151,7 @@ export default function App() {
         </article>)}
         {!antihypertensivePlan.hasHypertension&&<p className="strategy-restriction">Отдельные блоки могут относиться к ХСН, ИБС, ФП или постинфарктному состоянию. Для общего подбора АГ выберите диагноз «Артериальная гипертензия».</p>}
        </section>}
-       </details>
+       </details>}
        {!aceComparison.hasAceIndication&&antihypertensiveRankings.options.length===0&&<div className="match-alert">По выбранным данным пока не установлено показание для сравнения иАПФ. Сначала подтвердите диагноз или синдром.</div>}
        {aceComparison.hasAceIndication&&!aceComparison.canCompare&&<div className="match-alert danger">Ранжирование остановлено из-за критического фактора безопасности. Требуется клиническая оценка.</div>}
        {aceComparison.canCompare&&eapfAceRecommendations.length===0&&<div className="match-alert">Для этой комбинации пока недостаточно проверенных данных, чтобы сформировать рейтинг препаратов.</div>}
