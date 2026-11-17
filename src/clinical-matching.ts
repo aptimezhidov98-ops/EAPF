@@ -125,6 +125,7 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
   const hasDiabetes = has(selected, 'Сахарный диабет 1 типа', 'Сахарный диабет 2 типа')
   const hasCad = has(selected, 'Ишемическая болезнь сердца', 'Стабильная стенокардия', 'Состояние после инфаркта миокарда', 'Острый инфаркт миокарда (первые 24 часа)', 'Заболевание периферических артерий', 'Перенесённый инсульт / ТИА')
   const hasHfReduced = has(selected, 'Сердечная недостаточность со сниженной ФВ')
+  const hasAceIndication = hasHypertension || hasCkdDiagnosis || hasCad || has(selected, 'Хроническая сердечная недостаточность', 'Сердечная недостаточность со сниженной ФВ')
   const isAcuteMi = has(selected, 'Острый инфаркт миокарда (первые 24 часа)')
   const ageYears = Number(patient.age)
   const potassium = Number(patient.potassium)
@@ -229,13 +230,14 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
     acrRaw,
     renalMonitoring: hasCkdDiagnosis ? 'KDIGO 2024: после начала иАПФ/БРА или увеличения дозы следует проверить АД, креатинин и калий в течение 2–4 недель; точный срок зависит от рСКФ и исходного калия.' : null,
     interactionWarnings: caution.filter(item => /списке лекарств|лити[йя]|НПВП|БРА/i.test(item)),
-    candidates: profiles.map(profile => ({
+    hasAceIndication,
+    candidates: hasAceIndication ? profiles.map(profile => ({
       ...profile,
       ...evidence(profile),
       status: hardStop ? 'Не ранжировать: отмечено противопоказание/критический фактор' :
         caution.length ? 'Требуется дополнительная оценка' :
         'Кандидат для врачебного сравнения; индивидуальное превосходство не установлено',
-    })),
+    })) : [],
     selectedConditions: selected,
     summary: selected,
     limitation: 'Пилотная версия: сопоставление выполняется по ограниченному набору вручную заданных связей. Не является валидированным клиническим алгоритмом, не назначает лечение и не заменяет проверку полной инструкции и рекомендаций.',
