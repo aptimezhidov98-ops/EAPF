@@ -109,15 +109,25 @@ const has = (selected: string[], ...values: string[]) =>
 export function buildAceInhibitorComparison(selected: string[], patient: Record<string, string>) {
   const hasHypertension = has(selected, 'Артериальная гипертензия')
   const hasCkdDiagnosis = has(selected, 'Хроническая болезнь почек')
-  const hasAlbuminuria = has(selected, 'Альбуминурия / протеинурия')
-  const hasCkd = hasCkdDiagnosis || hasAlbuminuria
+  const selectedAlbuminuria = has(selected, 'Альбуминурия / протеинурия')
+  const acrRaw = (patient.acr || '').toLowerCase().replace(',', '.')
+  const acrValueMatch = acrRaw.match(/[0-9]+(?:\.[0-9]+)?/)
+  const acrValue = acrValueMatch ? Number(acrValueMatch[0]) : null
+  const acrIsMgG = /mg\s*\/\s*g|мг\s*\/\s*г/.test(acrRaw)
+  const acrIsMgMmol = /mg\s*\/\s*mmol|мг\s*\/\s*ммоль/.test(acrRaw)
+  const acrCategory = acrValue !== null && Number.isFinite(acrValue)
+    ? acrIsMgG ? acrValue < 30 ? 'A1' : acrValue < 300 ? 'A2' : 'A3'
+      : acrIsMgMmol ? acrValue < 3 ? 'A1' : acrValue < 30 ? 'A2' : 'A3'
+        : null
+    : null
+  const hasAlbuminuria = selectedAlbuminuria || (hasCkdDiagnosis && (acrCategory === 'A2' || acrCategory === 'A3'))
+  const hasCkd = hasCkdDiagnosis || selectedAlbuminuria
   const hasDiabetes = has(selected, 'Сахарный диабет 1 типа', 'Сахарный диабет 2 типа')
   const hasCad = has(selected, 'Ишемическая болезнь сердца', 'Стабильная стенокардия', 'Состояние после инфаркта миокарда', 'Острый инфаркт миокарда (первые 24 часа)', 'Заболевание периферических артерий', 'Перенесённый инсульт / ТИА')
   const hasHf = has(selected, 'Хроническая сердечная недостаточность', 'Сердечная недостаточность со сниженной ФВ')
   const hasHfReduced = has(selected, 'Сердечная недостаточность со сниженной ФВ')
   const isAcuteMi = has(selected, 'Острый инфаркт миокарда (первые 24 часа)')
   const ageYears = Number(patient.age)
-  const highRiskCombination = hasDiabetes && (hasHypertension || hasCkd || hasCad)
   const potassium = Number(patient.potassium)
   const acuteMiHours = Number(patient.mi_hours)
   const medicationText = (patient.medications || '').toLowerCase()
@@ -165,8 +175,12 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
     ].join(' ')
     const intText = [
       ...(hasHypertension ? ['АГ: ESC 2024 и AHA/ACC 2025 относят иАПФ/БРА к вариантам первой линии на уровне класса; конкретное МНН не ранжируется.'] : []),
-      ...(hasCkd && hasAlbuminuria ? ['ХБП с альбуминурией: KDIGO 2024 поддерживает блокаду РААС в соответствующих категориях; выбор конкретного иАПФ не ранжируется.'] : []),
-      ...(hasCkdDiagnosis && !hasAlbuminuria ? ['ХБП без категории альбуминурии: необходимость блокады РААС зависит от категории ХБП и клинического контекста.'] : []),
+      ...(hasCkdDiagnosis && acrCategory === 'A2' && hasDiabetes ? ['KDIGO 2024: при ХБП и диабете с A2/A3 рекомендован иАПФ или БРА (1B); это рекомендация класса РААС-блокаторов, конкретное МНН иАПФ не выделено.'] : []),
+      ...(hasCkdDiagnosis && acrCategory === 'A3' && !hasDiabetes ? ['KDIGO 2024: при ХБП A3 без диабета рекомендован иАПФ или БРА (1B); конкретное МНН не выделено.'] : []),
+      ...(hasCkdDiagnosis && acrCategory === 'A2' && !hasDiabetes ? ['KDIGO 2024: при ХБП A2 без диабета предлагается иАПФ или БРА (2C); это условная рекомендация класса, конкретное МНН не выделено.'] : []),
+      ...(hasCkdDiagnosis && acrCategory === 'A3' && hasDiabetes ? ['KDIGO 2024: при ХБП и диабете с A2/A3 рекомендован иАПФ или БРА (1B); конкретное МНН не выделено.'] : []),
+      ...(hasCkdDiagnosis && acrCategory === 'A1' ? ['KDIGO 2024: при ХБП A1 блокаду РААС рассматривают при отдельных показаниях, например АГ или ХСН со сниженной ФВ; сама категория A1 не даёт универсального показания.'] : []),
+      ...(hasCkdDiagnosis && acrCategory === null ? ['KDIGO 2024: категория альбуминурии ACR не определена. Введите числовой ACR с единицами mg/g или mg/mmol; одного диагноза ХБП недостаточно для проверки альбуминурийных рекомендаций.'] : []),
       ...(hasCad ? ['ИБС: доказательства отдельных молекул следует читать в контексте популяции и конечных точек конкретных исследований; они не устанавливают взаимное превосходство иАПФ.'] : []),
       ...(!hasHypertension && !hasCkd && !hasCad ? ['Для этого сочетания требуется отдельная проверка профильного международного руководства.'] : []),
     ].join(' ')
@@ -187,6 +201,8 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
     ageYears: Number.isFinite(ageYears) && ageYears > 0 ? ageYears : null,
     caution,
     bmi,
+    acrCategory,
+    acrRaw,
     interactionWarnings: caution.filter(item => /списке лекарств|лити[йя]|НПВП|БРА/i.test(item)),
     candidates: profiles.map(profile => ({
       ...profile,
