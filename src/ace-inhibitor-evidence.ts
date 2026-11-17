@@ -458,7 +458,7 @@ export const aceDrugEvidence: AceDrugEvidence[] = [
     hypertensionDose: 'В SmPC: старт 10 мг 1 раз/сут; обычная поддерживающая доза 10–40 мг 1 раз/сут. Если диуретик нельзя временно отменить, в SmPC рекомендован старт 5 мг под медицинским наблюдением. Повышение дозы оценивают после 3–4 недель.',
     doseSource: 'https://www.medicines.org.uk/emc/product/4155/smpc',
     doseCaveat: 'Британская SmPC, обновлена 28.07.2026. Двойной путь выведения не отменяет контроль АД, креатинина и калия и не доказывает автоматического преимущества при ХБП. Сверить локальную инструкцию и регистрацию.',
-    studies: [aceEvidenceStudies[17], aceEvidenceStudies[18], ...aceEvidenceStudies.filter(study => study.id === 'fosidial-results-2006')]
+    studies: [aceEvidenceStudies[18], ...aceEvidenceStudies.filter(study => study.id === 'fosidial-results-2006')]
   },
   {
     id: 'quinapril', inn: 'Квинаприл', evidenceTier: 'Данные клинических исходов неоднозначны',
@@ -508,6 +508,7 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
   const hasPad = has('Заболевание периферических артерий')
   const hasT1d = has('Сахарный диабет 1 типа')
   const hasT2d = has('Сахарный диабет 2 типа')
+  const hasDialysis = has('Программный гемодиализ')
   const ageYears = Number(patient.age)
   const egfrValue = patient.egfr?.trim() ? Number(patient.egfr) : null
   const proteinuria24h = patient.proteinuria24h?.trim() ? Number(patient.proteinuria24h) : null
@@ -524,6 +525,7 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
   const acrIsMgG = /mg\s*\/\s*g|мг\s*\/\s*г/.test(acr)
   const acrIsMgMmol = /mg\s*\/\s*mmol|мг\s*\/\s*ммоль/.test(acr)
   const albuminuriaA2A3 = acrNum !== null && ((acrIsMgG && acrNum >= 30) || (acrIsMgMmol && acrNum >= 3))
+  const albuminuriaA2 = acrNum !== null && ((acrIsMgG && acrNum >= 30 && acrNum < 300) || (acrIsMgMmol && acrNum >= 3 && acrNum < 30))
   const cards = (ids: string[], studyMap: Record<string, string[]> = {}) => ids.map(id => {
     const drug = aceDrugEvidence.find(item => item.id === id)
     if (!drug) return null
@@ -562,14 +564,14 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
     recommendations.push({
       heading: 'ХБП с повышенной альбуминурией',
       summary: 'Имеется обоснование для рассмотрения блокады РААС на уровне класса. У беназеприла есть AIPRI по прогрессированию хронической почечной недостаточности; у имидаприла — небольшое исследование с альбуминурией при СД 1 типа; у рамиприла — данные MICRO-HOPE в группе высокого сердечно-сосудистого риска.',
-      candidates: cards(['benazepril', ...((hopeVascularProfile && hasDiabetes) || hasAaskProfile || hasReinProfile ? ['ramipril'] : []), ...(hasT1d ? ['imidapril','lisinopril'] : []), ...(hasCaptoprilDiabeticNephropathyProfile ? ['captopril'] : []), 'fosinopril'], { benazepril: ['aipri-1996'], ramipril: [...(hasT2d ? ['micro-hope-2000'] : []), ...(hasAaskProfile ? ['aask-2002'] : []), ...(hasReinProfile ? ['rein-1997'] : [])], imidapril: ['japan-iddm-2002'], lisinopril: ['euclid-lisinopril-1997'], captopril: ['captopril-diabetic-nephropathy-1993'], fosinopril: ['fosidial-results-2006'] }),
+      candidates: cards(['benazepril', ...((hopeVascularProfile && hasDiabetes) || hasAaskProfile || hasReinProfile ? ['ramipril'] : []), ...(hasT1d ? ['imidapril'] : []), ...(hasT1d && albuminuriaA2 ? ['lisinopril'] : []), ...(hasCaptoprilDiabeticNephropathyProfile ? ['captopril'] : []), ...(hasDialysis ? ['fosinopril'] : [])], { benazepril: ['aipri-1996'], ramipril: [...(hasT2d ? ['micro-hope-2000'] : []), ...(hasAaskProfile ? ['aask-2002'] : []), ...(hasReinProfile ? ['rein-1997'] : [])], imidapril: ['japan-iddm-2002'], lisinopril: ['euclid-lisinopril-1997'], captopril: ['captopril-diabetic-nephropathy-1993'], fosinopril: (hasDialysis ? ['fosidial-results-2006'] : []) }),
       interpretation: 'Эти исследования различаются по этиологии ХБП и конечным точкам: AIPRI изучал почечную комбинированную конечную точку; JAPAN-IDDM и некоторые другие исследования — главным образом альбуминурию; HOPE/MICRO-HOPE — высокий СС-риск. Нельзя сводить их в прямой рейтинг нефропротекции.'
     })
   } else if (hasCkd) {
     recommendations.push({
       heading: 'ХБП без установленной категории альбуминурии',
       summary: 'Для интерпретации почечных рекомендаций нужен количественный ACR с единицами и уточнение стойкости альбуминурии. Одного диагноза ХБП недостаточно для вывода о преимуществе конкретной молекулы.',
-      candidates: cards(['benazepril', ...((hasAaskProfile || hasReinProfile) ? ['ramipril'] : []), 'fosinopril'], { benazepril: ['aipri-1996'], ramipril: [...(hasAaskProfile ? ['aask-2002'] : []), ...(hasReinProfile ? ['rein-1997'] : [])], fosinopril: ['fosidial-results-2006'] }),
+      candidates: cards(['benazepril', ...((hasAaskProfile || hasReinProfile) ? ['ramipril'] : []), ...(hasDialysis ? ['fosinopril'] : [])], { benazepril: ['aipri-1996'], ramipril: [...(hasAaskProfile ? ['aask-2002'] : []), ...(hasReinProfile ? ['rein-1997'] : [])], fosinopril: (hasDialysis ? ['fosidial-results-2006'] : []) }),
       interpretation: 'Пока нет ACR, программа не должна ранжировать молекулы по почечной защите.'
     })
   }
