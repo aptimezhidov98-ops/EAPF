@@ -139,38 +139,102 @@ export default function App() {
             (combo.name==='Exforge HCT'&&ids.includes('amlodipine')&&ids.includes('hydrochlorothiazide')&&rasChoice);
           });
           const sourceStudies=item.sources.map(id=>allAntihypertensiveStudies.find(study=>study.id===id)).filter((study):study is typeof allAntihypertensiveStudies[number]=>Boolean(study));
-          return <article className="strategy-card combination-card" key={item.title}>
-           <div className="strategy-card-top"><span className="strategy-priority">{'Приоритет '+item.priority}</span><span className="strategy-index">{String(index+1).padStart(2,'0')}</span></div>
-           <h4>{item.title}</h4>
-           <p>{item.reason}</p>
-           <div className="combination-dose-list">
-            {item.drugIds.some(id=>/ACEI|иАПФ|ARB|БРА|блокатор РААС/i.test(id))&&<div className="combination-dose-group">
-             <div className="combination-dose-group-title">Блокатор РААС — выбрать только один: иАПФ ИЛИ сартан</div>
-             <p className="dose-caveat">Не сочетать иАПФ с сартаном. Ниже приведены молекулы как альтернативы, а не компоненты одной схемы.</p>
-             {antihypertensiveDrugProfiles.filter(drug=>drug.group==='Сартаны').map(drug=>{
-              const guide=doseGuides[drug.id];
-              return <div className="combination-dose-row" key={drug.id}><div className="combination-dose-name"><b>{drug.name}</b><span>{guide?('Старт: '+guide.start+' · Максимум: '+guide.maximum):drug.dose}</span></div><div className="combination-dose-links"><a href={drug.instructionUrl} target="_blank" rel="noreferrer">Инструкция ↗</a>{drug.studies.map(study=><a key={study.id} href={study.url} target="_blank" rel="noreferrer">{study.title} ↗</a>)}</div>{guide&&<details className="dose-expand"><summary>Диапазон доз и титрация</summary><div><p><b>Обычный диапазон:</b> {guide.usual}</p><p><b>Шаг титрации:</b> {guide.titration}</p><p><b>Интервал:</b> {guide.interval}</p><p className="dose-caveat">{guide.context}</p></div></details>}</div>
-             })}
-             {aceDrugEvidence.map(drug=><div className="combination-dose-row" key={drug.id}><div className="combination-dose-name"><b>{drug.inn}</b><span>{drug.hypertensionDose}</span></div><div className="combination-dose-links"><a href={drug.doseSource} target="_blank" rel="noreferrer">Инструкция ↗</a>{drug.studies.slice(0,3).map(study=><a key={study.id} href={study.url} target="_blank" rel="noreferrer">{study.title} ↗</a>)}</div></div>)}
-            </div>}
-            {[...grouped.entries()].map(([group,drugs])=><div className="combination-dose-group" key={group}>
-             <div className="combination-dose-group-title">{drugs.length>1?'Выбрать один препарат из группы: '+group:group}</div>
-             {drugs.map(drug=>{
-              const guide=doseGuides[drug.id];
-              return <div className="combination-dose-row" key={drug.id}>
-               <div className="combination-dose-name"><b>{drug.name}</b><span>{guide?('Старт: '+guide.start+' · Максимум: '+guide.maximum):drug.dose}</span></div>
-               <div className="combination-dose-links"><a href={drug.instructionUrl} target="_blank" rel="noreferrer">Инструкция ↗</a>{drug.studies.map(study=><a key={study.id} href={study.url} target="_blank" rel="noreferrer">{study.title} ↗</a>)}</div>
-               {guide&&<details className="dose-expand"><summary>Диапазон доз и титрация</summary><div><p><b>Обычный диапазон:</b> {guide.usual}</p><p><b>Максимум:</b> {guide.maximum}</p><p><b>Шаг титрации:</b> {guide.titration}</p><p><b>Интервал:</b> {guide.interval}</p><p className="dose-caveat">{guide.context}</p></div></details>}
-              </div>
-             })}
-            </div>)}
-            {item.drugIds.filter(id=>!antihypertensiveDrugProfiles.some(drug=>drug.id===id)).map(id=><div className="combination-unresolved" key={id}>{id}</div>)}
+          const rasChoice=item.drugIds.some(id=>/ACEI|иАПФ|ARB|БРА|блокатор РААС/i.test(id));
+          const hasDhp=profiles.some(drug=>drug.group==='Блокаторы кальциевых каналов' && ['amlodipine','nifedipine-er','felodipine'].includes(drug.id));
+          const hasThiazide=profiles.some(drug=>drug.group==='Тиазидные и тиазидоподобные диуретики');
+          const hasLoop=profiles.some(drug=>drug.group==='Петлевые диуретики');
+          const hasBeta=profiles.some(drug=>drug.group==='Бета-блокаторы');
+          const hasMra=profiles.some(drug=>drug.group==='Антагонисты минералокортикоидных рецепторов');
+          const hasHfrEF=selected.includes('Сердечная недостаточность со сниженной ФВ') || (selected.includes('Хроническая сердечная недостаточность') && Number(preparedData?.lvef||0)>0 && Number(preparedData?.lvef)<=40);
+          const hasCkdAlbuminuria=selected.includes('Хроническая болезнь почек') && selected.includes('Альбуминурия / протеинурия');
+          const hasDiabetes=selected.includes('Сахарный диабет 1 типа')||selected.includes('Сахарный диабет 2 типа');
+          const hasCongestion=selected.includes('Отёки нижних конечностей')||selected.includes('Ортопноэ / ночные приступы удушья')||selected.includes('Одышка в покое')||selected.includes('Острая декомпенсация сердечной недостаточности');
+          const resistantCase=selected.includes('Резистентная артериальная гипертензия');
+          const bpParts=(preparedData?.blood_pressure||'').split(/[\\/]/).map(value=>Number(value.trim()));
+          const diastolicPredominant=bpParts.length===2&&Number.isFinite(bpParts[0])&&Number.isFinite(bpParts[1])&&bpParts[1]>=90&&bpParts[0]<140;
+          const displayTitle=hasHfrEF
+            ? (hasLoop?'Блокада РААС + бета-блокатор + диуретик':hasMra?'Блокада РААС + бета-блокатор + антагонист минералокортикоидных рецепторов':'Блокада РААС + бета-блокатор')
+            : rasChoice&&hasDhp?'Блокатор РААС + блокатор кальциевых каналов'
+            : rasChoice&&(hasThiazide||hasLoop)?'Блокатор РААС + диуретик'
+            : hasDhp&&hasThiazide?'Блокатор кальциевых каналов + диуретик'
+            : hasBeta&&hasMra?'Бета-блокатор + антагонист минералокортикоидных рецепторов'
+            : item.title;
+          let clinicalWhy=item.reason;
+          let mechanism='';
+          if(hasHfrEF){
+            clinicalWhy='При сердечной недостаточности со сниженной ФВ приоритет определяется не только уровнем АД, но и влиянием на прогноз. Блокада РААС/ARNI и бета-блокатор с доказательствами при ХСНнФВ воздействуют на патологическую нейрогуморальную активацию и ремоделирование миокарда. '+(hasCongestion?'Отмеченные признаки возможного застоя требуют отдельной оценки объёмного статуса; петлевой диуретик нужен для устранения подтверждённой перегрузки жидкостью, но сам по себе не считается доказанным средством снижения смертности.':'При отсутствии признаков застоя петлевой диуретик не добавляется автоматически: его назначение определяется клиническим объёмным статусом.');
+            mechanism='Блокатор РААС уменьшает эффекты ангиотензина II и альдостерона, снижая вазоконстрикцию, задержку натрия и неблагоприятное ремоделирование. Бета-блокатор снижает хроническую симпатическую стимуляцию, ЧСС и риск аритмий, а при ХСНнФВ улучшает клинические исходы. Диуретик при застое уменьшает внутрисосудистый/интерстициальный избыток жидкости и давление наполнения, облегчая отёки и одышку; это симптоматическая, а не самостоятельная прогностическая роль.';
+          } else if(hasCkdAlbuminuria){
+            clinicalWhy='При сочетании ХБП и альбуминурии блокатор РААС имеет приоритет из-за нефропротективного эффекта: он снижает внутриклубочковое давление и альбуминурию. Если требуется дополнительное снижение АД, второй компонент выбирается по уровню АД, рСКФ, калию и объёмному статусу. '+(hasDiabetes?'При сопутствующем сахарном диабете особенно важна оценка альбуминурии и риска прогрессирования диабетической болезни почек.':'');
+            mechanism='Блокада ангиотензина II расширяет выносящую артериолу клубочка, уменьшает внутриклубочковое давление и утечку альбумина. Дигидропиридиновый БКК снижает периферическое сосудистое сопротивление; диуретик уменьшает натрий- и водозависимый компонент АД, если он присутствует.';
+          } else if(rasChoice&&hasDhp){
+            clinicalWhy='При артериальной гипертензии без установленного специального показания к диуретику сочетание одного блокатора РААС с длительно действующим дигидропиридиновым БКК обеспечивает два взаимодополняющих механизма снижения АД. Если есть альбуминурия, ХБП или другое показание к блокаде РААС, это дополнительно влияет на выбор первого компонента.';
+            mechanism='Дигидропиридиновый БКК блокирует L-типа кальциевые каналы в гладкой мускулатуре артериол и снижает периферическое сопротивление. Блокатор РААС подавляет ангиотензин-зависимую вазоконстрикцию и нейрогуморальную компенсацию. Комбинация воздействует на сосудистый тонус разными путями; амлодипин-ассоциированные периферические отёки требуют отдельной оценки.';
+          } else if(rasChoice&&(hasThiazide||hasLoop)){
+            clinicalWhy='При АГ сочетание блокатора РААС с диуретиком оправдано, когда требуется дополнительное снижение АД и/или есть натрий- и водозависимый компонент. Тиазидный/тиазидоподобный препарат обычно используется для длительного контроля АД; петлевой диуретик рассматривают прежде всего при застое или отдельных ситуациях выраженного снижения рСКФ. '+(hasCongestion?'Отмеченные отёки/одышка усиливают необходимость проверить наличие застоя, но сами по себе не доказывают сердечную недостаточность.':'При отсутствии клинического застоя диуретик не следует трактовать как обязательное средство удаления жидкости; выбор зависит от АД, рСКФ и электролитов.');
+            mechanism='Диуретик усиливает выведение натрия и воды, снижая объёмную составляющую АД и сосудистую реактивность. Блокатор РААС ограничивает ангиотензин-зависимую вазоконстрикцию и альдостерон-зависимую задержку натрия. Сочетание воздействует на объёмный и нейрогуморальный компоненты, но требует контроля креатинина, рСКФ, натрия и калия.';
+          } else if(resistantCase&&hasMra){
+            clinicalWhy='При истинной резистентной АГ антагонист минералокортикоидных рецепторов может быть эффективным дополнительным компонентом после подтверждения приверженности, адекватных доз базовой тройной терапии и исключения вторичных причин. Это не стартовая комбинация для обычной АГ.';
+            mechanism='При резистентной АГ нередко сохраняется альдостерон-зависимая задержка натрия. Спиронолактон блокирует минералокортикоидный рецептор и уменьшает этот механизм; одновременно возрастает риск гиперкалиемии и ухудшения функции почек.';
+          } else if(hasDhp){
+            clinicalWhy='Дигидропиридиновый БКК снижает АД за счёт уменьшения периферического сосудистого сопротивления. При преимущественном повышении диастолического давления это физиологически релевантный механизм, однако один показатель диастолического АД сам по себе не доказывает преимущество БКК над другими препаратами первой линии.';
+            mechanism='Блокада L-типа кальциевых каналов в артериолах вызывает вазодилатацию и снижает общее периферическое сопротивление. При изолированном повышении диастолического АД нужно подтвердить измерения, оценить возраст, систолическое АД и общий сердечно-сосудистый риск.';
+          }
+          const combinationLinks=fixedCombinations.filter(combo=>{
+           const ids=profiles.map(drug=>drug.id);
+           return (combo.name==='Exforge'&&ids.includes('amlodipine')&&(ids.includes('valsartan')||rasChoice))||
+            (combo.name==='Twynsta'&&ids.includes('amlodipine')&&(ids.includes('telmisartan')||rasChoice))||
+            (combo.name==='Hyzaar'&&ids.includes('hydrochlorothiazide')&&(ids.includes('losartan')||rasChoice))||
+            (combo.name==='MicardisPlus'&&ids.includes('hydrochlorothiazide')&&(ids.includes('telmisartan')||rasChoice))||
+            (combo.name==='Exforge HCT'&&ids.includes('amlodipine')&&ids.includes('hydrochlorothiazide')&&rasChoice);
+          });
+          const aliases:Record<string,string[]>={'RU-АГ-2024':['esc-htn-2024'],'ESC-2024':['esc-htn-2024'],'PATHWAY-2':['pathway2'],'ACCOMPLISH':['accomplish'],'ALLHAT':['allhat'],'SHEP':['shep'],'HYVET':['hyvet'],'IDNT':['idnt-irbesartan'],'RENAAL':['renaal-losartan'],'CIBIS-II':['cibis2'],'MERIT-HF':['merit-hf'],'COPERNICUS':['copernicus'],'RALES':['rales'],'EPHESUS':['ephesus'],'CHARM-Alternative':['charm-alt'],'VALIANT':['valiant-valsartan'],'ASCOT':['ascot'],'SYST-EUR':['syst-eur'],'DCP':['dcp'],'CLICK':['click']};
+          const wantedStudyIds=item.sources.flatMap(source=>aliases[source]||[source.toLowerCase()]);
+          const sourceStudies=allAntihypertensiveStudies.filter(study=>wantedStudyIds.includes(study.id));
+          const combinationSpecific=sourceStudies.filter(study=>study.id==='accomplish');
+          const strategyStudies=sourceStudies.filter(study=>['ascot','hyvet','syst-eur','allhat'].includes(study.id));
+          const componentStudies=sourceStudies.filter(study=>!combinationSpecific.includes(study)&&!strategyStudies.includes(study));
+          return <details className="strategy-card combination-card combination-details" key={item.title}>
+           <summary className="combination-summary"><span className="strategy-priority">{'Приоритет '+item.priority}</span><span className="combination-summary-title">{displayTitle}</span><span className="combination-chevron">Открыть</span></summary>
+           <div className="combination-expanded">
+            <div className="combination-detail-section"><h4>Почему эта комбинация обоснована в данном случае</h4><p>{clinicalWhy}</p><p><b>Механизм:</b> {mechanism}</p></div>
+            <div className="combination-detail-section"><h4>Препараты, дозы и титрация</h4>
+             <div className="combination-dose-list">
+              {rasChoice&&<div className="combination-dose-group">
+               <div className="combination-dose-group-title">Блокатор РААС — выбрать только один: иАПФ ИЛИ сартан</div>
+               <p className="dose-caveat">Не сочетать иАПФ с сартаном. Ниже представлены альтернативные молекулы, а не компоненты одной схемы.</p>
+               {antihypertensiveDrugProfiles.filter(drug=>drug.group==='Сартаны').map(drug=>{
+                const guide=doseGuides[drug.id];
+                return <div className="combination-dose-row" key={drug.id}><div className="combination-dose-name"><b>{drug.name}</b><span>{guide?('Старт: '+guide.start+' · Максимум: '+guide.maximum):drug.dose}</span></div><div className="combination-dose-links"><a href={drug.instructionUrl} target="_blank" rel="noreferrer">Инструкция ↗</a>{drug.studies.map(study=><a key={study.id} href={study.url} target="_blank" rel="noreferrer">{study.title} ↗</a>)}</div>{guide&&<details className="dose-expand"><summary>Диапазон доз и титрация</summary><div><p><b>Обычный диапазон:</b> {guide.usual}</p><p><b>Шаг титрации:</b> {guide.titration}</p><p><b>Интервал:</b> {guide.interval}</p><p className="dose-caveat">{guide.context}</p></div></details>}</div>
+               })}
+               {aceDrugEvidence.map(drug=><div className="combination-dose-row" key={drug.id}><div className="combination-dose-name"><b>{drug.inn}</b><span>{drug.hypertensionDose}</span></div><div className="combination-dose-links"><a href={drug.doseSource} target="_blank" rel="noreferrer">Инструкция ↗</a>{drug.studies.slice(0,3).map(study=><a key={study.id} href={study.url} target="_blank" rel="noreferrer">{study.title} ↗</a>)}</div></div>)}
+              </div>}
+              {[...grouped.entries()].map(([group,drugs])=><div className="combination-dose-group" key={group}>
+               <div className="combination-dose-group-title">{drugs.length>1?'Выбрать один препарат из группы: '+group:group}</div>
+               {drugs.map(drug=>{
+                const guide=doseGuides[drug.id];
+                return <div className="combination-dose-row" key={drug.id}>
+                 <div className="combination-dose-name"><b>{drug.name}</b><span>{guide?('Старт: '+guide.start+' · Максимум: '+guide.maximum):drug.dose}</span></div>
+                 <div className="combination-dose-links"><a href={drug.instructionUrl} target="_blank" rel="noreferrer">Инструкция ↗</a>{drug.studies.map(study=><a key={study.id} href={study.url} target="_blank" rel="noreferrer">{study.title} ↗</a>)}</div>
+                 {guide&&<details className="dose-expand"><summary>Диапазон доз и титрация</summary><div><p><b>Обычный диапазон:</b> {guide.usual}</p><p><b>Максимум:</b> {guide.maximum}</p><p><b>Шаг титрации:</b> {guide.titration}</p><p><b>Интервал:</b> {guide.interval}</p><p className="dose-caveat">{guide.context}</p></div></details>}
+                </div>
+               })}
+              </div>)}
+              {item.drugIds.filter(id=>!antihypertensiveDrugProfiles.some(drug=>drug.id===id)&&! /ACEI|иАПФ|ARB|БРА|блокатор РААС/i.test(id)).map(id=><div className="combination-unresolved" key={id}>{id}</div>)}
+             </div>
+            </div>
+            <div className="combination-detail-section"><h4>Кратко об исследованиях</h4>
+             {combinationSpecific.length>0&&<div className="study-scope-label">Прямое исследование комбинации</div>}
+             {combinationSpecific.map(study=><div className="combination-study-summary" key={study.id}><b>{study.title} ({study.year})</b><p>{study.result}</p><p className="dose-caveat">Ограничение: {study.limits}</p><a href={study.url} target="_blank" rel="noreferrer">Публикация ↗</a></div>)}
+             {strategyStudies.length>0&&<div className="study-scope-label">Данные стратегии лечения (не изолированной таблетки)</div>}
+             {strategyStudies.map(study=><div className="combination-study-summary" key={study.id}><b>{study.title} ({study.year})</b><p>{study.result}</p><p className="dose-caveat">Ограничение: {study.limits}</p><a href={study.url} target="_blank" rel="noreferrer">Публикация ↗</a></div>)}
+             {componentStudies.length>0&&<div className="combination-study-summary"><b>Доказательства отдельных компонентов / класса</b><p>Эти исследования поддерживают применение соответствующего компонента или класса в изученной популяции, но сами по себе не доказывают преимущество именно этой комбинации.</p>{componentStudies.map(study=><div key={study.id}><b>{study.title} ({study.year})</b><p>{study.result}</p><p className="dose-caveat">Ограничение: {study.limits}</p><a href={study.url} target="_blank" rel="noreferrer">Публикация ↗</a></div>)}</div>}
+             {sourceStudies.length===0&&<p className="dose-caveat">Для этой конкретной схемы в текущей базе нет привязанного исследования комбинации. Не следует переносить результаты отдельных компонентов на комбинацию целиком.</p>}
+            </div>
+            {combinationLinks.length>0&&<div className="combination-detail-section fixed-combination-list"><b>Примеры фиксированных комбинаций</b>{combinationLinks.map(combo=><div key={combo.name}><span><b>{combo.name}</b> · {combo.ingredients} · {combo.strengths.join('; ')} мг</span><small>{combo.jurisdiction}. {combo.note}</small><a href={combo.source} target="_blank" rel="noreferrer">Официальная инструкция ↗</a></div>)}</div>}
+            {item.restriction&&<p className="strategy-restriction">{item.restriction}</p>}
            </div>
-           {combinationLinks.length>0&&<div className="fixed-combination-list"><b>Примеры фиксированных комбинаций</b>{combinationLinks.map(combo=><div key={combo.name}><span><b>{combo.name}</b> · {combo.ingredients} · {combo.strengths.join('; ')} мг</span><small>{combo.jurisdiction}. {combo.note}</small><a href={combo.source} target="_blank" rel="noreferrer">Официальная инструкция ↗</a></div>)}</div>}
-           {sourceStudies.length>0&&<div className="combination-trial-links"><b>Исследования комбинации / стратегии</b>{sourceStudies.map(study=><a key={study.id} href={study.url} target="_blank" rel="noreferrer">{study.title} ({study.year}) ↗</a>)}</div>}
-           {item.restriction&&<p className="strategy-restriction">{item.restriction}</p>}
-          </article>
-         })}
+          </details>
          {!antihypertensivePlan.hasHypertension&&<p className="strategy-restriction">Отдельные блоки могут относиться к ХСН, ИБС, ФП или постинфарктному состоянию. Для общего подбора АГ выберите диагноз «Артериальная гипертензия».</p>}
         </section>}
         {antihypertensiveRankings.options.length>0&&<section className="eapf-context antihypertensive-ranked-view">
