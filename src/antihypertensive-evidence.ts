@@ -62,12 +62,13 @@ export const antihypertensiveDrugProfiles: AntihypertensiveDrugProfile[] = [
 ];
 
 export type PlanItem = {priority:number; title:string; drugIds:string[]; reason:string; restriction?:string; sources:string[]};
-export type AntihypertensivePlan = {hasHypertension:boolean; items:PlanItem[]; warnings:string[]; summary:string; ruList:string[]};
+export type AntihypertensivePlan = {hasHypertension:boolean; items:PlanItem[]; warnings:string[]; summary:string; ruList:string[]; russianItems:string[]};
 
 export function buildAntihypertensivePlan(selected:string[], patient:Record<string,string>):AntihypertensivePlan {
  const has=(...xs:string[])=>xs.some(x=>selected.includes(x));
  const warnings:string[]=[];
  const items:PlanItem[]=[];
+ const russianItems:string[]=[];
  const hypertension=has('Артериальная гипертензия','Резистентная артериальная гипертензия');
  const hfrEF=has('Сердечная недостаточность со сниженной ФВ') || (patient.lvef?.trim()!=='' && Number(patient.lvef)<=40 && has('Хроническая сердечная недостаточность'));
  const ckd=has('Хроническая болезнь почек','Программный гемодиализ');
@@ -83,8 +84,8 @@ export function buildAntihypertensivePlan(selected:string[], patient:Record<stri
  const hr=patient.heart_rate?.trim()?Number(patient.heart_rate):null;
  const meds=(patient.medications||'').toLowerCase();
  const arniAlreadyUsed=/sacubitril|entresto/i.test(meds);
- const lowKOrRAS=Boolean(pregnancy||breastfeeding||angioedema||renalArtery||arniAlreadyUsed||(potassium!==null&&potassium>=5.5));
- const noRAS=lowKOrRAS;
+ const lowKOrRAS=Boolean(pregnancy||breastfeeding||angioedema||renalArtery||(potassium!==null&&potassium>=5.5));
+ const noRAS=Boolean(lowKOrRAS||arniAlreadyUsed);
  const resistant=has('Резистентная артериальная гипертензия');
  const asthma=has('Бронхиальная астма');
  const brady=has('Брадикардия / AV-блокада') || (hr!==null&&hr<50);
@@ -99,7 +100,8 @@ export function buildAntihypertensivePlan(selected:string[], patient:Record<stri
  const hfrEFdrugs=acuteDecomp?[]:asthma?['bisoprolol','metoprolol-succinate']:['bisoprolol','carvedilol','metoprolol-succinate'];
  if(pregnancy) warnings.push('Беременность/планирование: иАПФ и сартаны противопоказаны. Выбор нифедипина пролонгированного действия, метилдопы или других средств — по акушерскому протоколу и сроку беременности.');
  if(breastfeeding) warnings.push('Грудное вскармливание: в выбранной российской КР блокаторы РААС не рекомендованы; требуется выбор препарата с учётом лактации и официальной инструкции.');
- if(noRAS&&!pregnancy&&!breastfeeding) warnings.push('Введён фактор, ограничивающий иАПФ/сартан: гиперкалиемия, стеноз почечной артерии или ангионевротический отёк. Не предлагать блокаду РААС до отдельной оценки.');
+ if(lowKOrRAS&&!pregnancy&&!breastfeeding) warnings.push('Введён фактор, ограничивающий блокаду РААС: гиперкалиемия, стеноз почечной артерии или ангионевротический отёк. Не предлагать иАПФ/сартан до отдельной оценки.');
+ if(arniAlreadyUsed) warnings.push('В текущем списке уже указан сакубитрил/валсартан: не добавлять к нему отдельный сартан или иАПФ. При переходе с/на иАПФ обязателен интервал отмывки по инструкции.');
  if(potassium!==null&&potassium>=5.5) warnings.push('Калий ≥5,5 ммоль/л: автоматический выбор иАПФ/сартана и антагониста минералокортикоидных рецепторов остановлен до оценки причины и коррекции.');
  if(acuteDecomp) warnings.push('Острая декомпенсация ХСН: не начинать и не титровать бета-блокатор до клинической стабилизации. Продолжение уже назначенной терапии решается индивидуально.');
  if(brady) warnings.push('ЧСС <50/мин или отмечена брадикардия/AV-блокада: не предлагать старт бета-блокатора, верапамила или дилтиазема без оценки ЭКГ/проводимости.');
@@ -121,6 +123,7 @@ export function buildAntihypertensivePlan(selected:string[], patient:Record<stri
    else warnings.push('При ХСНнФВ для решения о MRA нужны актуальные калий и рСКФ; в этой форме данных недостаточно для предложения спиронолактона/эплеренона.');
  }
  if(pregnancy&&hypertension) {
+   russianItems.push('Нифедипин пролонгированного действия; метилдопа; лабеталол — по акушерским показаниям и протоколу. ИАПФ и сартаны противопоказаны.');
    items.push({priority:1,title:'Антигипертензивная терапия при беременности',drugIds:['nifedipine-er',...(asthma?[]:['labetalol']),'Метилдопа — по акушерскому протоколу'],reason:'Пролонгированный нифедипин — один из основных вариантов; лабеталол — возможная альтернатива при соответствующих акушерских показаниях.',restriction:'Индивидуальный акушерский протокол обязателен. Не использовать блокаторы РААС; избегать немедленно высвобождающегося нифедипина для плановой терапии.',sources:['RU-АГ-2024']});
    if(!items.length) items.push({priority:1,title:'Беременность — выбор отдельного режима',drugIds:['nifedipine-er','labetalol'],reason:'Блокаторы РААС исключены; требуется профильная акушерская оценка.',restriction:'Не является схемой для самостоятельного начала или титрации.',sources:['RU-АГ-2024']});
  }
@@ -159,7 +162,17 @@ export function buildAntihypertensivePlan(selected:string[], patient:Record<stri
  if(asthma) {
    // warnings are shown above; do not create a beta blocker suggestion unless there is a separate compelling indication
  }
+ if(hypertension&&!pregnancy) {
+   if(resistant) russianItems.push(noRAS?'При ограничении блокады РААС: дигидропиридиновый БКК и диуретик; стандартная тройная схема невозможна без решения вопроса о блокаде РААС.':'Один иАПФ или сартан + дигидропиридиновый БКК + тиазидный/тиазидоподобный диуретик; при истинной резистентной АГ — спиронолактон при допустимых калии и рСКФ.');
+   else if(oldFrail) russianItems.push('Монотерапия одним препаратом в низкой дозе с медленной титрацией; возможные классы — дигидропиридиновый БКК, иАПФ/сартан или диуретик по клиническому профилю.');
+   else if(noRAS) russianItems.push('При невозможности блокады РААС: дигидропиридиновый БКК и/или тиазидный/тиазидоподобный диуретик; индивидуально по противопоказаниям и лабораторным показателям.');
+   else russianItems.push('Один иАПФ или сартан + дигидропиридиновый блокатор кальциевых каналов либо тиазидный/тиазидоподобный диуретик; при недостаточном контроле — тройная комбинация этих классов.');
+ }
+ if(ckd&&albuminuria) russianItems.push('При подтверждённой стойкой альбуминурии: иАПФ или сартан (только один блокатор РААС), с контролем калия и функции почек.');
+ if(hfrEF) russianItems.push('При ХСНнФВ: иАПФ или АРНИ; при непереносимости иАПФ/АРНИ — сартан по показаниям; бисопролол, карведилол или метопролол сукцинат пролонгированного высвобождения; спиронолактон/эплеренон при допустимых калии и рСКФ; ингибитор SGLT2 по профильной схеме ХСН.');
+ if(af) russianItems.push(hfrEF?'При ФП и ХСНнФВ: бета-блокатор для контроля ЧСС; верапамил/дилтиазем при HFrEF не использовать.':'При ФП: бета-блокатор либо верапамил/дилтиазем для контроля ЧСС при сохранённой ФВ; не сочетать эти варианты между собой.');
+ if(angina) russianItems.push('При симптомной стенокардии: бета-блокатор и/или дигидропиридиновый блокатор кальциевых каналов по ЧСС, ФВ ЛЖ и переносимости.');
  const summary=hypertension?'Модуль оценивает комбинации классов для АГ и специальные показания (ХСН, ИБС, ФП, пост-ИМ).':'Для основного подбора терапии АГ выберите диагноз «Артериальная гипертензия»; отдельные сердечные состояния могут формировать специальные блоки.';
  const ruList=items.map(item=>item.title+': '+item.drugIds.join(', ')).filter(Boolean);
- return {hasHypertension:hypertension,items,warnings,summary,ruList};
+ return {hasHypertension:hypertension,items,warnings,summary,ruList,russianItems:[...new Set(russianItems)]};
 }
