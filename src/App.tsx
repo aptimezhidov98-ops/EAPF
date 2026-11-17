@@ -7,7 +7,6 @@ const conditionGroups = [
  { title: 'Почки и обмен веществ', items: ['Хроническая болезнь почек','Альбуминурия / протеинурия','Сахарный диабет 1 типа','Сахарный диабет 2 типа','Метаболический синдром','Дислипидемия','Гиперкалиемия'] },
  { title: 'Другие состояния и факторы риска', items: ['Ожирение','Подагра / гиперурикемия','Беременность или её планирование','Пожилой возраст / старческая астения','Ортостатическая гипотензия','Обезвоживание / гиповолемия','Ангионевротический отёк в анамнезе'] }
 ]
-const initialCustom = ['']
 
 export default function App() {
  const [query, setQuery] = useState('')
@@ -41,7 +40,7 @@ export default function App() {
  const nav = ['Клинический помощник', ...sections]
  return <div className="app-shell">
   <aside className="sidebar"><div className="brand"><div className="brand-mark">E</div><div><b>EAPF</b><small>Medical reference</small></div></div>
-   <div className="side-label">РАЗДЕЛЫ</div>{nav.map((s,i)=><button key={s} className={active===s?'nav-item active':'nav-item'} onClick={()=>setActive(s)}>{i===0?<Stethoscope size={18}/>:i===1?<Pill size={18}/>:i===2?<Activity size={18}/>:i===3?<FlaskConical size={18}/>:i===4?<BookOpen size={18}/>:i===5?<FileText size={18}/>:<ShieldCheck size={18}/ >}{s}</button>)}
+   <div className="side-label">РАЗДЕЛЫ</div>{nav.map((s,i)=><button key={s} className={active===s?'nav-item active':'nav-item'} onClick={()=>setActive(s)}>{i===0?<Stethoscope size={18}/>:i===1?<Pill size={18}/>:i===2?<Activity size={18}/>:i===3?<FlaskConical size={18}/>:i===4?<BookOpen size={18}/>:i===5?<FileText size={18}/>:<ShieldCheck size={18}/>}{s}</button>)}
    <div className="sidebar-foot">Экспертная медицинская платформа<br/><span>Версия 0.2 · демонстрационный режим</span></div>
   </aside>
   <main className="main"><header className="topbar"><button className="mobile-menu" aria-label="Меню"><Menu/></button><span>EAPF · КЛИНИЧЕСКИЙ ПОМОЩНИК</span><span className="top-status"><i/> Основа: иАПФ</span></header>
