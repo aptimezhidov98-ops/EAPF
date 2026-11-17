@@ -79,6 +79,9 @@ export default function App() {
  const networkEvidence = aceEvidenceStudies.find(study => study.id === 'ace-hf-network-2016')
  const cadthEvidence = aceEvidenceStudies.find(study => study.id === 'cadth-ace-comparative-2008')
  const postMiComparativeEvidence = aceEvidenceStudies.find(study => study.id === 'ace-postmi-cohort-2004')
+ const anbp2Evidence = aceEvidenceStudies.find(study => study.id === 'anbp2-2003')
+ const combinedVascularEvidence = aceEvidenceStudies.find(study => study.id === 'hope-europa-peace-combined-2006')
+ const stableCadReview = aceEvidenceStudies.find(study => study.id === 'stable-cad-ras-meta-2017')
  const nav = ['Клинический помощник', ...sections]
  return <div className="app-shell">
   <aside className={mobileNavOpen?'sidebar mobile-open':'sidebar'}><div className="brand"><div className="brand-mark">E</div><div><b>EAPF</b><small>Medical reference</small></div></div>
@@ -144,6 +147,9 @@ export default function App() {
         {networkEvidence&&<details className="evidence-study"><summary>{networkEvidence.title} · 2016 <span>Сравнение молекул</span></summary><div><p>{networkEvidence.population}</p><p>{networkEvidence.finding}</p><p className="dose-caveat">{networkEvidence.limitations} Результаты не использовать для клинического ранжирования.</p><a className="evidence-link" href={networkEvidence.url} target="_blank" rel="noreferrer">Открыть публикацию ↗</a></div></details>}
         {cadthEvidence&&<details className="evidence-study"><summary>{cadthEvidence.title} · 2008 <span>Исторический HTA-обзор</span></summary><div><p>{cadthEvidence.finding}</p><p className="dose-caveat">{cadthEvidence.limitations}</p><a className="evidence-link" href={cadthEvidence.url} target="_blank" rel="noreferrer">Открыть отчёт CADTH ↗</a></div></details>}
         {postMiComparativeEvidence&&<details className="evidence-study"><summary>{postMiComparativeEvidence.title} · 2004 <span>Наблюдательная когорта</span></summary><div><p>{postMiComparativeEvidence.population}</p><p>{postMiComparativeEvidence.finding}</p><p className="dose-caveat">{postMiComparativeEvidence.limitations}</p><a className="evidence-link" href={postMiComparativeEvidence.url} target="_blank" rel="noreferrer">Открыть публикацию ↗</a></div></details>}
+        {anbp2Evidence&&<details className="evidence-study"><summary>{anbp2Evidence.title} · 2003 <span>Стратегия лечения АГ</span></summary><div><p>{anbp2Evidence.population}</p><p>{anbp2Evidence.finding}</p><p className="dose-caveat">{anbp2Evidence.limitations}</p><a className="evidence-link" href={anbp2Evidence.url} target="_blank" rel="noreferrer">Открыть РКИ ↗</a></div></details>}
+        {combinedVascularEvidence&&<details className="evidence-study"><summary>{combinedVascularEvidence.title} · 2006 <span>Классовый анализ</span></summary><div><p>{combinedVascularEvidence.population}</p><p>{combinedVascularEvidence.finding}</p><p className="dose-caveat">{combinedVascularEvidence.limitations}</p><a className="evidence-link" href={combinedVascularEvidence.url} target="_blank" rel="noreferrer">Открыть анализ ↗</a></div></details>}
+        {stableCadReview&&<details className="evidence-study"><summary>{stableCadReview.title} · 2017 <span>Систематический обзор</span></summary><div><p>{stableCadReview.finding}</p><p className="dose-caveat">{stableCadReview.limitations}</p><a className="evidence-link" href={stableCadReview.url} target="_blank" rel="noreferrer">Открыть BMJ ↗</a></div></details>}
        </div>
        <div className="eapf-method"><b>{evidenceMethods.title}</b><ul>{evidenceMethods.principles.map(item=><li key={item}>{item}</li>)}</ul></div>
       </div>:<div className="russian-recommendation-view">
