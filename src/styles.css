@@ -127,3 +127,6 @@
  .clinical-footer{padding:7px 2px}
 }
 @media(max-width:380px){.patient-grid{grid-template-columns:1fr}.workspace-brand-tag{display:none}}
+
+/* Simplified ranked recommendation results */
+.ranked-drug-list{display:grid;gap:10px;margin-top:14px}.ranked-drug{background:#fff;border:1px solid #dce6ec;border-radius:14px;padding:15px 16px}.ranked-drug-top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}.rank-number{font-size:11px;font-weight:800;color:#286b8b;background:#e9f3f8;border-radius:20px;padding:5px 9px}.rank-level{font-size:11px;color:#718590}.ranked-drug h4{font-size:18px;margin:10px 0 6px;color:#203e50}.ranked-drug p{font-size:13px;line-height:1.55;color:#687b86;margin:0 0 10px}.drug-source-links{display:flex;flex-wrap:wrap;gap:7px 13px;border-top:1px solid #edf1f3;padding-top:9px}.drug-source-links a{font-size:11px;color:#347fa8;text-decoration:underline;text-underline-offset:3px}.ru-drug-line{background:#fff;border:1px solid #dce6ec;border-radius:13px;padding:14px 16px;margin:10px 0}.ru-drug-line h3{font-size:15px;margin:0 0 5px}.ru-drug-line p{font-size:11px;color:#87949d;margin:0 0 8px}.ru-drug-line b{font-size:13px;line-height:1.5;color:#345365}
