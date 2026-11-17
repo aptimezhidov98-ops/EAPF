@@ -124,12 +124,15 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
   const hasCkd = hasCkdDiagnosis || selectedAlbuminuria
   const hasDiabetes = has(selected, 'Сахарный диабет 1 типа', 'Сахарный диабет 2 типа')
   const hasCad = has(selected, 'Ишемическая болезнь сердца', 'Стабильная стенокардия', 'Состояние после инфаркта миокарда', 'Острый инфаркт миокарда (первые 24 часа)', 'Заболевание периферических артерий', 'Перенесённый инсульт / ТИА')
-  const hasHf = has(selected, 'Хроническая сердечная недостаточность', 'Сердечная недостаточность со сниженной ФВ')
   const hasHfReduced = has(selected, 'Сердечная недостаточность со сниженной ФВ')
   const isAcuteMi = has(selected, 'Острый инфаркт миокарда (первые 24 часа)')
   const ageYears = Number(patient.age)
   const potassium = Number(patient.potassium)
-  const acuteMiHours = Number(patient.mi_hours)
+  const acuteMiHours = patient.mi_hours?.trim() ? Number(patient.mi_hours) : Number.NaN
+  const egfrValue = patient.egfr?.trim() ? Number(patient.egfr) : null
+  const egfrCategory = egfrValue !== null && Number.isFinite(egfrValue) && egfrValue > 0
+    ? egfrValue >= 90 ? 'G1' : egfrValue >= 60 ? 'G2' : egfrValue >= 45 ? 'G3a' : egfrValue >= 30 ? 'G3b' : egfrValue >= 15 ? 'G4' : 'G5'
+    : null
   const medicationText = (patient.medications || '').toLowerCase()
   const usesArni = medicationText.includes('сакубитрил') || medicationText.includes('энтресто') || medicationText.includes('entresto')
   const usesArb = ['лозартан','валсартан','кандесартан','телмисартан','ирбесартан','олмесартан','эпросартан'].some(name => medicationText.includes(name))
@@ -214,6 +217,8 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
     caution,
     bmi,
     acrCategory,
+    egfrCategory,
+    acrNeedsCkdConfirmation: acrCategory !== null && !hasCkdDiagnosis,
     acrRaw,
     renalMonitoring: hasCkdDiagnosis ? 'KDIGO 2024: после начала иАПФ/БРА или увеличения дозы следует проверить АД, креатинин и калий в течение 2–4 недель; точный срок зависит от рСКФ и исходного калия.' : null,
     interactionWarnings: caution.filter(item => /списке лекарств|лити[йя]|НПВП|БРА/i.test(item)),
