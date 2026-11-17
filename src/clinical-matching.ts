@@ -185,8 +185,8 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
   ]
   const evidence = (profile: DrugProfile) => {
     const studies = profile.studyEvidence.filter(study => {
-      if (profile.id === 'ramipril') return ageYears >= 55 && (hasCad || (hasDiabetes && (hasHypertension || hasCkd)))
-      if (profile.id === 'perindopril') return has(selected, 'Ишемическая болезнь сердца', 'Стабильная стенокардия')
+      if (profile.id === 'ramipril') return ageYears >= 55 && !hasHfReduced && !hasHfUnspecified && !isAcuteMi && (hasCad || (hasDiabetes && (hasHypertension || hasCkd)))
+      if (profile.id === 'perindopril') return !hasHfReduced && !hasHfUnspecified && !isAcuteMi && hasCoronaryContext
       if (profile.id === 'enalapril') return hasHfReduced
       if (profile.id === 'lisinopril') return isAcuteMi && Number.isFinite(acuteMiHours) && acuteMiHours >= 0 && acuteMiHours <= 24
       return false
