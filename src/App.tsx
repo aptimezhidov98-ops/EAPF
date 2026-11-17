@@ -129,16 +129,6 @@ export default function App() {
           const profiles=item.drugIds.map(id=>antihypertensiveDrugProfiles.find(drug=>drug.id===id)).filter((drug):drug is typeof antihypertensiveDrugProfiles[number]=>Boolean(drug));
           const grouped=new Map<string,typeof profiles>();
           profiles.forEach(drug=>grouped.set(drug.group,[...(grouped.get(drug.group)||[]),drug]));
-          const combinationLinks=fixedCombinations.filter(combo=>{
-           const ids=profiles.map(drug=>drug.id);
-           const rasChoice=item.drugIds.some(id=>/ACEI|иАПФ|ARB|БРА|блокатор РААС/i.test(id));
-           return (combo.name==='Exforge'&&ids.includes('amlodipine')&&(ids.includes('valsartan')||rasChoice))||
-            (combo.name==='Twynsta'&&ids.includes('amlodipine')&&(ids.includes('telmisartan')||rasChoice))||
-            (combo.name==='Hyzaar'&&ids.includes('hydrochlorothiazide')&&(ids.includes('losartan')||rasChoice))||
-            (combo.name==='MicardisPlus'&&ids.includes('hydrochlorothiazide')&&(ids.includes('telmisartan')||rasChoice))||
-            (combo.name==='Exforge HCT'&&ids.includes('amlodipine')&&ids.includes('hydrochlorothiazide')&&rasChoice);
-          });
-          const sourceStudies=item.sources.map(id=>allAntihypertensiveStudies.find(study=>study.id===id)).filter((study):study is typeof allAntihypertensiveStudies[number]=>Boolean(study));
           const rasChoice=item.drugIds.some(id=>/ACEI|иАПФ|ARB|БРА|блокатор РААС/i.test(id));
           const hasDhp=profiles.some(drug=>drug.group==='Блокаторы кальциевых каналов' && ['amlodipine','nifedipine-er','felodipine'].includes(drug.id));
           const hasThiazide=profiles.some(drug=>drug.group==='Тиазидные и тиазидоподобные диуретики');
