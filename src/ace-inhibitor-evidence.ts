@@ -458,6 +458,7 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
   const hasStroke = has('Перенесённый инсульт / ТИА')
   const hasPad = has('Заболевание периферических артерий')
   const hasT1d = has('Сахарный диабет 1 типа')
+  const hasT2d = has('Сахарный диабет 2 типа')
   const ageYears = Number(patient.age)
   const hopeVascularProfile = Number.isFinite(ageYears) && ageYears >= 55 && (hasCvdRisk || (hasDiabetes && has('Артериальная гипертензия', 'Хроническая болезнь почек', 'Дислипидемия', 'Ожирение')))
   const hasHighRisk = hasDiabetes && hasCvdRisk || (has('Сахарный диабет 2 типа') && has('Артериальная гипертензия'))
@@ -507,22 +508,22 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
     recommendations.push({
       heading: 'ХБП с повышенной альбуминурией',
       summary: 'Имеется обоснование для рассмотрения блокады РААС на уровне класса. У беназеприла есть AIPRI по прогрессированию хронической почечной недостаточности; у имидаприла — небольшое исследование с альбуминурией при СД 1 типа; у рамиприла — данные MICRO-HOPE в группе высокого сердечно-сосудистого риска.',
-      candidates: cards(['benazepril', ...(hopeVascularProfile && hasDiabetes ? ['ramipril'] : []), ...(hasT1d ? ['imidapril'] : []), 'fosinopril'], { benazepril: ['aipri-1996'], ramipril: ['micro-hope-2000'], imidapril: ['japan-iddm-2002'], fosinopril: ['fosidial-2002','fosinopril-enalapril-1998'] }),
+      candidates: cards(['benazepril', ...(hopeVascularProfile && hasDiabetes ? ['ramipril'] : []), ...(hasT1d ? ['imidapril'] : []), 'fosinopril'], { benazepril: ['aipri-1996'], ramipril: (hasT2d ? ['micro-hope-2000'] : []), imidapril: ['japan-iddm-2002'], fosinopril: ['fosidial-2002','fosinopril-enalapril-1998'] }),
       interpretation: 'Эти исследования различаются по этиологии ХБП и конечным точкам: AIPRI изучал почечную комбинированную конечную точку; JAPAN-IDDM и некоторые другие исследования — главным образом альбуминурию; HOPE/MICRO-HOPE — высокий СС-риск. Нельзя сводить их в прямой рейтинг нефропротекции.'
     })
   } else if (hasCkd) {
     recommendations.push({
       heading: 'ХБП без установленной категории альбуминурии',
       summary: 'Для интерпретации почечных рекомендаций нужен количественный ACR с единицами и уточнение стойкости альбуминурии. Одного диагноза ХБП недостаточно для вывода о преимуществе конкретной молекулы.',
-      candidates: cards(['ramipril','benazepril','fosinopril']),
+      candidates: cards(['benazepril','ramipril','fosinopril'], { benazepril: ['aipri-1996'], ramipril: [], fosinopril: ['fosidial-2002','fosinopril-enalapril-1998'] }),
       interpretation: 'Пока нет ACR, программа не должна ранжировать молекулы по почечной защите.'
     })
   }
   if (hasHighRisk && !hasMi) {
     recommendations.push({
       heading: 'Сахарный диабет и высокий сердечно-сосудистый риск',
-      summary: 'HOPE/MICRO-HOPE дают прямые исходные данные по рамиприлу в высокорисковой диабетической популяции. Это доказательство для заданного профиля, а не универсальная рекомендация рамиприла при любом СД.',
-      candidates: cards([...(hopeVascularProfile ? ['ramipril'] : []),'perindopril'], { ramipril: ['hope-2000','micro-hope-2000'], perindopril: ['advance-2007'] }),
+      summary: 'HOPE/MICRO-HOPE дают прямые исходные данные по рамиприлу у пациентов ≥55 лет с диабетом и высоким сосудистым риском. ADVANCE изучал фиксированную комбинацию периндоприл + индапамид при СД 2 типа; её результаты нельзя приписывать периндоприлу отдельно.',
+      candidates: cards([...(hopeVascularProfile ? ['ramipril'] : []), ...(hasT2d ? ['perindopril'] : [])], { ramipril: (hasT2d ? ['hope-2000','micro-hope-2000'] : ['hope-2000']), perindopril: (hasT2d ? ['advance-2007'] : []) }),
       interpretation: 'Если АГ/сосудистое заболевание сопровождаются диабетом, ХБП или альбуминурией, проверять показание к блокаде РААС, рСКФ, калий и текущую терапию. Не считать метаболический синдром или ожирение достаточным основанием для преимущества отдельного иАПФ.'
     })
   }
