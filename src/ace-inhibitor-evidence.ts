@@ -394,7 +394,7 @@ export const aceDrugEvidence: AceDrugEvidence[] = [
     hypertensionDose: 'Числовая доза ожидает проверки официальной инструкции и регистрации в юрисдикции.',
     doseSource: 'https://pubmed.ncbi.nlm.nih.gov/11796177/',
     doseCaveat: 'Доза 5 мг/сут из JAPAN-IDDM — это исследовательский режим в небольшой популяции СД 1 типа, а не универсальная инструкция для АГ.',
-    studies: [aceEvidenceStudies[21]]
+    studies: [aceEvidenceStudies[20]]
   }
 ]
 
@@ -438,7 +438,7 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
     recommendations.push({
       heading: 'Хроническая сердечная недостаточность со сниженной ФВ',
       summary: 'Эналаприл имеет крупные landmark-РКИ по снижению смертности при ХСНнФВ; лизиноприл имеет данные по дозированию и госпитализациям. Выбор иАПФ должен вписываться в современную комплексную терапию ХСНнФВ.',
-      candidates: cards(['enalapril','lisinopril','ramipril','trandolapril']),
+      candidates: cards(['enalapril','lisinopril']),
       interpretation: 'Сопоставление 2018 года после propensity-score и дозового matching не выявило статистически значимых различий смертности между эналаприлом, лизиноприлом и рамиприлом. Это наблюдательные данные, а не доказательство строгой эквивалентности. Рекомендации современной терапии ХСН могут предпочитать ARNI у подходящих пациентов.'
     })
   }
@@ -465,7 +465,7 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
       interpretation: 'Пока нет ACR, программа не должна ранжировать молекулы по почечной защите.'
     })
   }
-  if (hasHighRisk && !hasMi && !hasCkd) {
+  if (hasHighRisk && !hasMi) {
     recommendations.push({
       heading: 'Сахарный диабет и высокий сердечно-сосудистый риск',
       summary: 'HOPE/MICRO-HOPE дают прямые исходные данные по рамиприлу в высокорисковой диабетической популяции. Это доказательство для заданного профиля, а не универсальная рекомендация рамиприла при любом СД.',
