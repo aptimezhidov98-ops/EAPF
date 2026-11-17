@@ -23,11 +23,25 @@ export default function App() {
  const [normalization, setNormalization] = useState<{ normalized_term: string; explanation: string; coding_system: string; code: string | null; confidence: 'high' | 'medium' | 'low'; needs_clinician_review: boolean } | null>(null)
  const filtered = useMemo(() => drugs.filter(d => d.name.toLowerCase().includes(query.toLowerCase())), [query])
  const toggle = (item: string) => setSelected(old => old.includes(item) ? old.filter(x => x !== item) : [...old, item])
- const addCustom = () => {
+ const addCustom = async () => {
   const value = customText.trim()
-  if (!value) return
+  if (!value || normalizing) return
   setSuggested(value)
-  setNotice('Проверьте формулировку. После подтверждения она будет сохранена в личном списке на этом устройстве.')
+  setNormalization(null)
+  setNotice('Можно подтвердить формулировку вручную. ИИ включится после настройки защищённого входа и серверного доступа.')
+  setNormalizing(true)
+  try {
+   const token = sessionStorage.getItem('eapf_access_token')
+   if (!token) return
+   const response = await fetch('/api/normalize-condition', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ term: value }) })
+   const result = await response.json()
+   if (!response.ok) throw new Error(result.error || 'Не удалось обработать формулировку')
+   setNormalization(result)
+   setSuggested(result.normalized_term || value)
+   setNotice('ИИ предложил стандартизированную формулировку. Проверьте её и подтвердите вручную.')
+  } catch (error) {
+   setNotice(error instanceof Error ? error.message : 'ИИ-нормализация сейчас недоступна. Можно продолжить вручную.')
+  } finally { setNormalizing(false) }
  }
  const confirmCustom = () => {
   const value = suggested.trim()
@@ -38,7 +52,8 @@ export default function App() {
   setSelected(old => old.includes(value) ? old : [...old, value])
   setCustomText('')
   setSuggested('')
-  setNotice('Состояние добавлено в ваш личный список на этом устройстве.')
+  setNormalization(null)
+  setNotice('Состояние добавлено в личный список на этом устройстве со статусом «не проверено».')
  }
  const nav = ['Клинический помощник', ...sections]
  return <div className="app-shell">
