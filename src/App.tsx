@@ -6,6 +6,7 @@ import { buildAceInhibitorComparison } from './clinical-matching'
 import { buildEapfAceRecommendations, aceEvidenceStudies, aceDrugEvidence, evidenceMethods } from './ace-inhibitor-evidence'
 import { buildAntihypertensivePlan, antihypertensiveDrugProfiles } from './antihypertensive-evidence'
 import { allAntihypertensiveStudies, buildAntihypertensiveRankings } from './antihypertensive-ranking'
+import { doseGuides, fixedCombinations } from './antihypertensive-dosing'
 
 const conditionGroups = [
  { title: 'Сердечно-сосудистые заболевания', items: ['Артериальная гипертензия','Хроническая сердечная недостаточность','Сердечная недостаточность со сниженной ФВ','Ишемическая болезнь сердца','Состояние после инфаркта миокарда','Острый инфаркт миокарда (первые 24 часа)','Стабильная стенокардия','Фибрилляция предсердий','Перенесённый инсульт / ТИА','Заболевание периферических артерий'] },
@@ -121,38 +122,64 @@ export default function App() {
       {recommendationTab==='eapf'?<div className="eapf-recommendation-view">
        <div className="eapf-intro"><b>Рекомендации EAPF</b><p>Препараты упорядочены по соответствию имеющимся клиническим доказательствам для выбранного профиля. Одинаковый уровень означает равную позицию; это не доказательство превосходства одного препарата.</p></div>
        {antihypertensivePlan.warnings.map((warning,index)=><div className="match-alert" key={'ah-warning-'+index}>{warning}</div>)}
-       {antihypertensiveRankings.options.length>0&&<section className="eapf-context antihypertensive-ranked-view">
-        <div className="eapf-context-heading"><div><h3>{antihypertensiveRankings.title}</h3><p>{antihypertensiveRankings.summary}</p></div></div>
-        <div className="ranked-drug-list">{antihypertensiveRankings.options.map((option,index)=>{
-         const equal=antihypertensiveRankings.options.filter(item=>item.rank===option.rank).length>1;
-         const profileNames=option.drugIds.map(id=>antihypertensiveDrugProfiles.find(drug=>drug.id===id)).filter((drug):drug is typeof antihypertensiveDrugProfiles[number]=>Boolean(drug));
-         return <article className="ranked-drug" key={option.title+'-'+index}>
-          <div className="ranked-drug-top"><span className="rank-number">{'Место '+option.rank+(equal?' · равный приоритет':'')}</span><span className="rank-level">{option.group}</span></div>
-          <h4>{option.title}</h4>
-          <div className="strategy-medicines">{profileNames.map(drug=><span className="strategy-medicine" key={drug.id}>{drug.name}</span>)}{option.additionalNames?.map(name=><span className="strategy-medicine muted" key={name}>{name}</span>)}</div>
-          <p>{option.rationale}</p>
-          {option.caution&&<p className="strategy-restriction">{option.caution}</p>}
-          <div className="drug-source-links">{profileNames.map(drug=><a key={drug.id} href={drug.instructionUrl} target="_blank" rel="noreferrer">Инструкция: {drug.name} ↗</a>)}</div>
-         </article>
-        })}</div>
-       </section>}
-       {antihypertensiveRankings.notes.map((note,index)=><div className="match-alert" key={'ranking-note-'+index}>{note}</div>)}
-       {(antihypertensivePlan.items.length>0||antihypertensivePlan.hasHypertension)&&<details className="plan-details">
-        <summary>Посмотреть варианты комбинаций и дополнительные ограничения</summary>
-       {(antihypertensivePlan.items.length>0||antihypertensivePlan.hasHypertension)&&<section className="clinical-plan">
-        <div className="clinical-plan-heading"><div><span className="plan-kicker">ПОДБОР ВСЕХ ОСНОВНЫХ КЛАССОВ</span><h3>Антигипертензивная стратегия для этого случая</h3><p>{antihypertensivePlan.summary}</p></div></div>
-        {antihypertensivePlan.items.map((item,index)=><article className="strategy-card" key={item.title}>
-         <div className="strategy-card-top"><span className="strategy-priority">{'Приоритет '+item.priority}</span><span className="strategy-index">{String(index+1).padStart(2,'0')}</span></div>
-         <h4>{item.title}</h4>
-         <div className="strategy-medicines">{item.drugIds.length?item.drugIds.map((id,j)=>{const profile=antihypertensiveDrugProfiles.find(drug=>drug.id===id);return <span className="strategy-medicine" key={id+'-'+j}>{profile?profile.name:id}</span>}):<span className="strategy-medicine muted">Нет безопасного варианта для автоматического предложения</span>}</div>
-         <p>{item.reason}</p>
-         {item.restriction&&<p className="strategy-restriction">{item.restriction}</p>}
-         <div className="drug-source-links">{item.drugIds.map(id=>antihypertensiveDrugProfiles.find(drug=>drug.id===id)).filter((drug):drug is typeof antihypertensiveDrugProfiles[number]=>Boolean(drug)).map(drug=><a key={drug.id} href={drug.instructionUrl} target="_blank" rel="noreferrer">Инструкция: {drug.name} ↗</a>)}</div>
-        </article>)}
-        {!antihypertensivePlan.hasHypertension&&<p className="strategy-restriction">Отдельные блоки могут относиться к ХСН, ИБС, ФП или постинфарктному состоянию. Для общего подбора АГ выберите диагноз «Артериальная гипертензия».</p>}
-       </section>}
-       </details>}
-       {!aceComparison.hasAceIndication&&antihypertensiveRankings.options.length===0&&<div className="match-alert">По выбранным данным пока не установлено показание для сравнения иАПФ. Сначала подтвердите диагноз или синдром.</div>}
+       
+        {(antihypertensivePlan.items.length>0||antihypertensivePlan.hasHypertension)&&<section className="clinical-plan combination-first">
+         <div className="clinical-plan-heading"><div><span className="plan-kicker">ОСНОВНОЙ РЕЗУЛЬТАТ ПОДБОРА</span><h3>Рекомендуемые комбинации препаратов</h3><p>{antihypertensivePlan.summary}</p></div></div>
+         {antihypertensivePlan.items.map((item,index)=>{
+          const profiles=item.drugIds.map(id=>antihypertensiveDrugProfiles.find(drug=>drug.id===id)).filter((drug):drug is typeof antihypertensiveDrugProfiles[number]=>Boolean(drug));
+          const grouped=new Map<string,typeof profiles>();
+          profiles.forEach(drug=>grouped.set(drug.group,[...(grouped.get(drug.group)||[]),drug]));
+          const combinationLinks=fixedCombinations.filter(combo=>{
+           const ids=profiles.map(drug=>drug.id);
+           return (combo.name==='Exforge'&&ids.includes('amlodipine')&&ids.includes('valsartan'))||
+            (combo.name==='Twynsta'&&ids.includes('amlodipine')&&ids.includes('telmisartan'))||
+            (combo.name==='Hyzaar'&&ids.includes('losartan')&&ids.includes('hydrochlorothiazide'))||
+            (combo.name==='MicardisPlus'&&ids.includes('telmisartan')&&ids.includes('hydrochlorothiazide'))||
+            (combo.name==='Exforge HCT'&&ids.includes('amlodipine')&&ids.includes('valsartan')&&ids.includes('hydrochlorothiazide'));
+          });
+          const sourceStudies=item.sources.map(id=>allAntihypertensiveStudies.find(study=>study.id===id)).filter((study):study is typeof allAntihypertensiveStudies[number]=>Boolean(study));
+          return <article className="strategy-card combination-card" key={item.title}>
+           <div className="strategy-card-top"><span className="strategy-priority">{'Приоритет '+item.priority}</span><span className="strategy-index">{String(index+1).padStart(2,'0')}</span></div>
+           <h4>{item.title}</h4>
+           <p>{item.reason}</p>
+           <div className="combination-dose-list">
+            {[...grouped.entries()].map(([group,drugs])=><div className="combination-dose-group" key={group}>
+             <div className="combination-dose-group-title">{drugs.length>1?'Выбрать один препарат из группы: '+group:group}</div>
+             {drugs.map(drug=>{
+              const guide=doseGuides[drug.id];
+              return <div className="combination-dose-row" key={drug.id}>
+               <div className="combination-dose-name"><b>{drug.name}</b><span>{guide?('Старт: '+guide.start+' · Максимум: '+guide.maximum):drug.dose}</span></div>
+               <div className="combination-dose-links"><a href={drug.instructionUrl} target="_blank" rel="noreferrer">Инструкция ↗</a>{drug.studies.map(study=><a key={study.id} href={study.url} target="_blank" rel="noreferrer">{study.title} ↗</a>)}</div>
+               {guide&&<details className="dose-expand"><summary>Диапазон доз и титрация</summary><div><p><b>Обычный диапазон:</b> {guide.usual}</p><p><b>Максимум:</b> {guide.maximum}</p><p><b>Шаг титрации:</b> {guide.titration}</p><p><b>Интервал:</b> {guide.interval}</p><p className="dose-caveat">{guide.context}</p></div></details>}
+              </div>
+             })}
+            </div>)}
+            {item.drugIds.filter(id=>!antihypertensiveDrugProfiles.some(drug=>drug.id===id)).map(id=><div className="combination-unresolved" key={id}>{id}</div>)}
+           </div>
+           {combinationLinks.length>0&&<div className="fixed-combination-list"><b>Примеры фиксированных комбинаций</b>{combinationLinks.map(combo=><div key={combo.name}><span><b>{combo.name}</b> · {combo.ingredients} · {combo.strengths.join('; ')} мг</span><small>{combo.jurisdiction}. {combo.note}</small><a href={combo.source} target="_blank" rel="noreferrer">Официальная инструкция ↗</a></div>)}</div>}
+           {sourceStudies.length>0&&<div className="combination-trial-links"><b>Исследования комбинации / стратегии</b>{sourceStudies.map(study=><a key={study.id} href={study.url} target="_blank" rel="noreferrer">{study.title} ({study.year}) ↗</a>)}</div>}
+           {item.restriction&&<p className="strategy-restriction">{item.restriction}</p>}
+          </article>
+         })}
+         {!antihypertensivePlan.hasHypertension&&<p className="strategy-restriction">Отдельные блоки могут относиться к ХСН, ИБС, ФП или постинфарктному состоянию. Для общего подбора АГ выберите диагноз «Артериальная гипертензия».</p>}
+        </section>}
+        {antihypertensiveRankings.options.length>0&&<section className="eapf-context antihypertensive-ranked-view">
+         <div className="eapf-context-heading"><div><h3>Отдельные препараты и альтернативы</h3><p>{antihypertensiveRankings.summary}</p></div></div>
+         <div className="ranked-drug-list">{antihypertensiveRankings.options.map((option,index)=>{
+          const equal=antihypertensiveRankings.options.filter(item=>item.rank===option.rank).length>1;
+          const profileNames=option.drugIds.map(id=>antihypertensiveDrugProfiles.find(drug=>drug.id===id)).filter((drug):drug is typeof antihypertensiveDrugProfiles[number]=>Boolean(drug));
+          return <article className="ranked-drug" key={option.title+'-'+index}>
+           <div className="ranked-drug-top"><span className="rank-number">{'Место '+option.rank+(equal?' · равный приоритет':'')}</span><span className="rank-level">{option.group}</span></div>
+           <h4>{option.title}</h4>
+           <div className="strategy-medicines">{profileNames.map(drug=><span className="strategy-medicine" key={drug.id}>{drug.name}</span>)}{option.additionalNames?.map(name=><span className="strategy-medicine muted" key={name}>{name}</span>)}</div>
+           <p>{option.rationale}</p>
+           {option.caution&&<p className="strategy-restriction">{option.caution}</p>}
+           <div className="drug-source-links">{profileNames.map(drug=><a key={drug.id} href={drug.instructionUrl} target="_blank" rel="noreferrer">Инструкция: {drug.name} ↗</a>)}</div>
+          </article>
+         })}</div>
+        </section>}
+        {antihypertensiveRankings.notes.map((note,index)=><div className="match-alert" key={'ranking-note-'+index}>{note}</div>)}
+{!aceComparison.hasAceIndication&&antihypertensiveRankings.options.length===0&&<div className="match-alert">По выбранным данным пока не установлено показание для сравнения иАПФ. Сначала подтвердите диагноз или синдром.</div>}
        {aceComparison.hasAceIndication&&!aceComparison.canCompare&&<div className="match-alert danger">Ранжирование остановлено из-за критического фактора безопасности. Требуется клиническая оценка.</div>}
        {aceComparison.canCompare&&eapfAceRecommendations.length===0&&<div className="match-alert">Для этой комбинации пока недостаточно проверенных данных, чтобы сформировать рейтинг препаратов.</div>}
        {aceComparison.canCompare&&(()=>{
