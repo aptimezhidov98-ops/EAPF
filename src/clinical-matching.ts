@@ -188,8 +188,20 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
       ruText,
       intText,
       studies,
-      ruStatus: hasHypertension ? 'Основной класс; МНН не выделено' : hasCkd && hasAlbuminuria ? 'Нужно сверить показание по КР' : 'Не ранжировано по РФ',
-      intStatus: hasHypertension ? 'Первая линия на уровне класса' : hasCkd && hasAlbuminuria ? 'Рекомендация класса по фенотипу ХБП' : 'Не ранжировано международными КР',
+      ruStatus: [
+        ...(hasHypertension ? ['АГ: основной класс, МНН не выделено'] : []),
+        ...(hasCad ? ['ИБС/ССЗ: иАПФ по отдельным показаниям, МНН не ранжируется'] : []),
+        ...(!hasHypertension && !hasCad ? ['Для данного сочетания нет проверенного положения с выделением МНН'] : []),
+      ].join(' · '),
+      intStatus: [
+        ...(hasHypertension ? ['АГ: первая линия на уровне класса'] : []),
+        ...(hasCkdDiagnosis && acrCategory === 'A2' && hasDiabetes ? ['KDIGO ХБП+СД A2/A3: 1B (класс)'] : []),
+        ...(hasCkdDiagnosis && acrCategory === 'A3' && !hasDiabetes ? ['KDIGO ХБП A3 без СД: 1B (класс)'] : []),
+        ...(hasCkdDiagnosis && acrCategory === 'A2' && !hasDiabetes ? ['KDIGO ХБП A2 без СД: 2C (класс)'] : []),
+        ...(hasCkdDiagnosis && acrCategory === 'A1' ? ['KDIGO A1: только при конкретных показаниях'] : []),
+        ...(hasCkdDiagnosis && acrCategory === null ? ['KDIGO: категория ACR не определена'] : []),
+        ...(!hasHypertension && !hasCkdDiagnosis ? ['Не ранжировано международными КР для выбранных данных'] : []),
+      ].join(' · '),
       studyStatus: studies.length ? 'Есть исследование этой молекулы' : 'Нет привязанного исследования для выбора',
     }
   }
@@ -203,6 +215,7 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
     bmi,
     acrCategory,
     acrRaw,
+    renalMonitoring: hasCkdDiagnosis ? 'KDIGO 2024: после начала иАПФ/БРА или увеличения дозы следует проверить АД, креатинин и калий в течение 2–4 недель; точный срок зависит от рСКФ и исходного калия.' : null,
     interactionWarnings: caution.filter(item => /списке лекарств|лити[йя]|НПВП|БРА/i.test(item)),
     candidates: profiles.map(profile => ({
       ...profile,
