@@ -509,6 +509,11 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
   const hasT1d = has('Сахарный диабет 1 типа')
   const hasT2d = has('Сахарный диабет 2 типа')
   const ageYears = Number(patient.age)
+  const egfrValue = patient.egfr?.trim() ? Number(patient.egfr) : null
+  const proteinuria24h = patient.proteinuria24h?.trim() ? Number(patient.proteinuria24h) : null
+  const hasAaskProfile = has('Артериальная гипертензия') && hasCkd && egfrValue !== null && Number.isFinite(egfrValue) && egfrValue >= 20 && egfrValue <= 65
+  const hasReinProfile = hasCkd && !hasDiabetes && proteinuria24h !== null && Number.isFinite(proteinuria24h) && proteinuria24h >= 3
+  const hasCaptoprilDiabeticNephropathyProfile = hasT1d && hasCkd && proteinuria24h !== null && Number.isFinite(proteinuria24h) && proteinuria24h >= 0.5
   const hopeVascularProfile = Number.isFinite(ageYears) && ageYears >= 55 && (hasCvdRisk || (hasDiabetes && has('Артериальная гипертензия', 'Хроническая болезнь почек', 'Дислипидемия', 'Ожирение')))
   const hasHighRisk = hasDiabetes && hasCvdRisk || (has('Сахарный диабет 2 типа') && has('Артериальная гипертензия'))
   const hasMi = has('Острый инфаркт миокарда (первые 24 часа)', 'Состояние после инфаркта миокарда')
@@ -557,14 +562,14 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
     recommendations.push({
       heading: 'ХБП с повышенной альбуминурией',
       summary: 'Имеется обоснование для рассмотрения блокады РААС на уровне класса. У беназеприла есть AIPRI по прогрессированию хронической почечной недостаточности; у имидаприла — небольшое исследование с альбуминурией при СД 1 типа; у рамиприла — данные MICRO-HOPE в группе высокого сердечно-сосудистого риска.',
-      candidates: cards(['benazepril', ...(hopeVascularProfile && hasDiabetes ? ['ramipril'] : []), ...(hasT1d ? ['imidapril'] : []), 'fosinopril'], { benazepril: ['aipri-1996'], ramipril: (hasT2d ? ['micro-hope-2000'] : []), imidapril: ['japan-iddm-2002'], fosinopril: ['fosidial-2002','fosinopril-enalapril-1998'] }),
+      candidates: cards(['benazepril', ...((hopeVascularProfile && hasDiabetes) || hasAaskProfile || hasReinProfile ? ['ramipril'] : []), ...(hasT1d ? ['imidapril','lisinopril'] : []), ...(hasCaptoprilDiabeticNephropathyProfile ? ['captopril'] : []), 'fosinopril'], { benazepril: ['aipri-1996'], ramipril: [...(hasT2d ? ['micro-hope-2000'] : []), ...(hasAaskProfile ? ['aask-2002'] : []), ...(hasReinProfile ? ['rein-1997'] : [])], imidapril: ['japan-iddm-2002'], lisinopril: ['euclid-lisinopril-1997'], captopril: ['captopril-diabetic-nephropathy-1993'], fosinopril: ['fosidial-results-2006'] }),
       interpretation: 'Эти исследования различаются по этиологии ХБП и конечным точкам: AIPRI изучал почечную комбинированную конечную точку; JAPAN-IDDM и некоторые другие исследования — главным образом альбуминурию; HOPE/MICRO-HOPE — высокий СС-риск. Нельзя сводить их в прямой рейтинг нефропротекции.'
     })
   } else if (hasCkd) {
     recommendations.push({
       heading: 'ХБП без установленной категории альбуминурии',
       summary: 'Для интерпретации почечных рекомендаций нужен количественный ACR с единицами и уточнение стойкости альбуминурии. Одного диагноза ХБП недостаточно для вывода о преимуществе конкретной молекулы.',
-      candidates: cards(['benazepril','ramipril','fosinopril'], { benazepril: ['aipri-1996'], ramipril: [], fosinopril: ['fosidial-2002','fosinopril-enalapril-1998'] }),
+      candidates: cards(['benazepril', ...((hasAaskProfile || hasReinProfile) ? ['ramipril'] : []), 'fosinopril'], { benazepril: ['aipri-1996'], ramipril: [...(hasAaskProfile ? ['aask-2002'] : []), ...(hasReinProfile ? ['rein-1997'] : [])], fosinopril: ['fosidial-results-2006'] }),
       interpretation: 'Пока нет ACR, программа не должна ранжировать молекулы по почечной защите.'
     })
   }
@@ -596,7 +601,7 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
     recommendations.push({
       heading: 'Артериальная гипертензия без специфического сопутствующего фенотипа',
       summary: 'иАПФ — один из возможных классов антигипертензивной терапии. Для обычной АГ доступные исследования в большей степени позволяют сравнивать контроль АД и переносимость; они не дают надёжного универсального рейтинга конкретных иАПФ по смертности.',
-      candidates: cards(['ramipril','enalapril','perindopril','lisinopril','benazepril','captopril'], { ramipril: [], enalapril: [], perindopril: [], lisinopril: ['allhat-lisinopril-2002'], benazepril: [], captopril: ['cappp-1999'] }),
+      candidates: cards(['ramipril','enalapril','perindopril','lisinopril','benazepril','captopril'], { ramipril: [], enalapril: [], perindopril: ['ascot-bpla-2005'], lisinopril: ['allhat-lisinopril-2002'], benazepril: [], captopril: ['cappp-1999'] }),
       interpretation: 'При выборе учитывать целевое АД, возраст, рСКФ, калий, альбуминурию, сердечную недостаточность, ИБС, переносимость, кратность приёма, стоимость/доступность и локальную инструкцию.'
     })
   }
