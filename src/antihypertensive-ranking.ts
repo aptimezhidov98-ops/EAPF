@@ -110,13 +110,13 @@ export function buildAntihypertensiveRankings(
   const onSingleRasBlocker = onAce || onArb || onArni
   const onBetaBlocker = /bisoprolol|carvedilol|metoprolol|nebivolol|labetalol|atenolol|бисопролол|карведилол|метопролол|небиволол|лабеталол|атенолол/i.test(medicines)
   const onNonDhp = /verapamil|diltiazem|верапамил|дилтиазем/i.test(medicines)
+  const postMi = has(selected, 'Состояние после инфаркта миокарда')
   const hfrEF = has(selected, 'Сердечная недостаточность со сниженной ФВ') ||
-    (has(selected, 'Хроническая сердечная недостаточность') && ef !== null && ef <= 40) ||
-    (ef !== null && ef <= 40 && has(selected, 'Состояние после инфаркта миокарда'))
+    (has(selected, 'Хроническая сердечная недостаточность') && ef !== null && ef <= 40)
+  const mraIndication = hfrEF || (postMi && ef !== null && ef <= 40 && diabetes)
   const acuteDecomp = has(selected, 'Острая декомпенсация сердечной недостаточности')
   const atrialFibrillation = has(selected, 'Фибрилляция предсердий')
   const angina = has(selected, 'Стабильная стенокардия', 'Ишемическая болезнь сердца')
-  const postMi = has(selected, 'Состояние после инфаркта миокарда')
   const bradycardia = has(selected, 'Брадикардия / AV-блокада') || (heartRate !== null && heartRate < 50)
   const asthma = has(selected, 'Бронхиальная астма')
   const gout = has(selected, 'Подагра / гиперурикемия')
@@ -157,7 +157,7 @@ export function buildAntihypertensiveRankings(
       ['Метилдопа — по акушерскому протоколу'],
     )
     notes.push('Беременность: блокаторы РААС исключены. Нужны срок беременности, оценка матери/плода и действующий акушерский протокол.')
-  } else if (hypertension) {
+  } else if (hypertension && !hfrEF) {
     if (resistant) {
       if (!noRasBlockade) {
         add(
@@ -295,12 +295,13 @@ export function buildAntihypertensiveRankings(
         'Начинать и титровать после клинической стабилизации, при контроле ЧСС, АД и признаков застоя. При астме предпочтительнее оценивать β1-селективные варианты; не использовать при выраженной брадикардии/AV-блокаде.',
         ['cibis2', 'merit-hf', 'copernicus'],
       )
+      if (onBetaBlocker) notes.push('Бета-блокатор уже указан в текущей терапии: не добавлять второй; проверить дозу, ЧСС и переносимость.')
     } else if (acuteDecomp) {
       notes.push('Острая декомпенсация ХСН: новый бета-блокатор не предлагается; вопрос продолжения ранее назначенного лечения решается по гемодинамике и клинической ситуации.')
     } else {
       notes.push('ЧСС <50/мин или указана AV-блокада: бета-блокатор не включён в рейтинг до оценки ЭКГ и проводимости.')
     }
-    if (!hyperkalemia && potassium !== null && potassium < 5.0 && egfr !== null && egfr >= 30 && !/spironolactone|eplerenone|спиронолактон|эплеренон/i.test(medicines)) {
+    if (mraIndication && !acuteDecomp && !hyperkalemia && potassium !== null && potassium < 5.0 && egfr !== null && egfr >= 30 && !/spironolactone|eplerenone|спиронолактон|эплеренон/i.test(medicines)) {
       add(
         1,
         'Антагонист минералокортикоидных рецепторов при ХСНнФВ',
@@ -310,8 +311,10 @@ export function buildAntihypertensiveRankings(
         'Не начинать без актуальных калия и рСКФ. Нужен частый контроль калия и креатинина после начала и изменения дозы.',
         ['rales', 'ephesus'],
       )
-    } else {
-      notes.push('MRA при ХСНнФВ не ранжирован: нужны актуальные калий <5,0 ммоль/л и рСКФ ≥30 мл/мин/1,73 м² с последующим мониторингом.')
+    } else if (mraIndication && /spironolactone|eplerenone|спиронолактон|эплеренон/i.test(medicines)) {
+      notes.push('Антагонист минералокортикоидных рецепторов уже указан в текущей терапии: проверить дозу, калий и функцию почек; второй MRA не добавлять.')
+    } else if (mraIndication) {
+      notes.push('MRA не ранжирован: нужны актуальные калий <5,0 ммоль/л и рСКФ ≥30 мл/мин/1,73 м² с последующим мониторингом.')
     }
     if (has(selected, 'Отёки нижних конечностей') || has(selected, 'Одышка при нагрузке', 'Ортопноэ / ночные приступы удушья')) {
       add(
@@ -337,7 +340,18 @@ export function buildAntihypertensiveRankings(
     }
   }
 
-  if (postMi && ef !== null && !hfrEF && !bradycardia && !acuteDecomp) {
+  if (postMi && ef !== null && !hfrEF && ef <= 40 && !bradycardia && !acuteDecomp) {
+    add(
+      1,
+      'Бета-блокатор после ИМ при ФВ ЛЖ ≤40%',
+      'Бета-блокатор — выбрать один; превосходство конкретного МНН не установлено',
+      ['bisoprolol', 'carvedilol', 'metoprolol-succinate'],
+      'При выраженной постинфарктной дисфункции ЛЖ бета-блокатор рассматривается после клинической стабилизации. В этой ситуации важнее показание и переносимость, чем формальный рейтинг конкретного МНН.',
+      'Уточнить наличие клинической СН, ЧСС, АД и проводимость. Не начинать при острой декомпенсации, шоке или симптомной брадикардии.',
+      ['capricorn-carvedilol', 'cibis2', 'merit-hf'],
+    )
+  }
+  if (postMi && ef !== null && !hfrEF && ef > 40 && !bradycardia && !acuteDecomp) {
     if (ef >= 40 && ef < 50) {
       add(
         1,
@@ -392,8 +406,14 @@ export function buildAntihypertensiveRankings(
     )
   }
 
+  if (hypertension && !hfrEF && !pregnancy && !resistant && !atrialFibrillation && !angina && !postMi) {
+    notes.push('Бета-блокатор не включён в первую линию при неосложнённой АГ. Его рассматривают при отдельных показаниях — например, стенокардии, ХСН, контроле ЧСС или отдельных постинфарктных фенотипах.')
+  }
   if (aceCough && hypertension && !noRasBlockade && !ckd) {
     notes.push('Кашель на фоне иАПФ: рассмотреть замену иАПФ на один БРА, а не добавление БРА к иАПФ.')
+  }
+  if (noRasBlockade && hypertension && !pregnancy) {
+    notes.push('Блокада РААС не включена в автоматический рейтинг из-за отмеченного ограничения: гиперкалиемии, стеноза почечной артерии, лактации или текущего приёма сакубитрила/валсартана. Причину и возможность коррекции следует оценить отдельно.')
   }
   if (angioedema) {
     notes.push('Ангионевротический отёк в анамнезе: повторное применение иАПФ противопоказано; возможность БРА зависит от причины отёка и индивидуальной оценки риска, поэтому в этой версии БРА не ранжируется автоматически.')
