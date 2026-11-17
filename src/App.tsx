@@ -4,12 +4,13 @@ import { drugs, sections } from './data'
 import { russianClinicalRecommendations, primarySources } from './recommendations'
 import { buildAceInhibitorComparison } from './clinical-matching'
 import { buildEapfAceRecommendations, aceEvidenceStudies, aceDrugEvidence, evidenceMethods } from './ace-inhibitor-evidence'
+import { buildAntihypertensivePlan, antihypertensiveDrugProfiles, antihypertensiveStudies } from './antihypertensive-evidence'
 
 const conditionGroups = [
  { title: 'Сердечно-сосудистые заболевания', items: ['Артериальная гипертензия','Хроническая сердечная недостаточность','Сердечная недостаточность со сниженной ФВ','Ишемическая болезнь сердца','Состояние после инфаркта миокарда','Острый инфаркт миокарда (первые 24 часа)','Стабильная стенокардия','Фибрилляция предсердий','Перенесённый инсульт / ТИА','Заболевание периферических артерий'] },
  { title: 'Почки и обмен веществ', items: ['Хроническая болезнь почек','Альбуминурия / протеинурия','Сахарный диабет 1 типа','Сахарный диабет 2 типа','Метаболический синдром','Дислипидемия','Гиперкалиемия','Программный гемодиализ'] },
  { title: 'Другие состояния и факторы риска', items: ['Ожирение','Подагра / гиперурикемия','Беременность или её планирование','Пожилой возраст / старческая астения','Ортостатическая гипотензия','Обезвоживание / гиповолемия','Ангионевротический отёк в анамнезе','Двусторонний стеноз почечных артерий / стеноз артерии единственной почки','Грудное вскармливание'] },
- { title: 'Симптомы и непереносимость', items: ['Сухой кашель на фоне ранее назначенного иАПФ','Головокружение при вставании','Обмороки / предобморочные состояния','Одышка при нагрузке','Ортопноэ / ночные приступы удушья','Отёки нижних конечностей','Боль в груди в настоящее время','Одышка в покое'] }
+ { title: 'Симптомы и непереносимость', items: ['Сухой кашель на фоне ранее назначенного иАПФ','Головокружение при вставании','Обмороки / предобморочные состояния','Одышка при нагрузке','Ортопноэ / ночные приступы удушья','Отёки нижних конечностей','Боль в груди в настоящее время','Одышка в покое','Резистентная артериальная гипертензия','Бронхиальная астма','Брадикардия / AV-блокада','Острая декомпенсация сердечной недостаточности'] }
 ]
 
 export default function App() {
@@ -72,6 +73,7 @@ export default function App() {
  const patientRecommendations = russianClinicalRecommendations.filter(item => item.appliesTo.some(condition => selected.includes(condition)))
  const aceComparison = useMemo(() => buildAceInhibitorComparison(selected, preparedData || {}), [selected, preparedData])
  const eapfAceRecommendations = useMemo(() => buildEapfAceRecommendations(selected, preparedData || {}), [selected, preparedData])
+ const antihypertensivePlan = useMemo(() => buildAntihypertensivePlan(selected, preparedData || {}), [selected, preparedData])
  const classOutcomeEvidence = aceEvidenceStudies.find(study => study.id === 'ace-cv-class-meta-2026')
  const adverseEvidence = aceEvidenceStudies.find(study => study.id === 'ace-adverse-meta-2022')
  const comparativeEvidence = aceEvidenceStudies.find(study => study.id === 'ace-comparative-cohort-2018')
