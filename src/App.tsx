@@ -18,6 +18,9 @@ export default function App() {
  })
  const [suggested, setSuggested] = useState('')
  const [notice, setNotice] = useState('')
+ const [mobileNavOpen, setMobileNavOpen] = useState(false)
+ const [normalizing, setNormalizing] = useState(false)
+ const [normalization, setNormalization] = useState<{ normalized_term: string; explanation: string; coding_system: string; code: string | null; confidence: 'high' | 'medium' | 'low'; needs_clinician_review: boolean } | null>(null)
  const filtered = useMemo(() => drugs.filter(d => d.name.toLowerCase().includes(query.toLowerCase())), [query])
  const toggle = (item: string) => setSelected(old => old.includes(item) ? old.filter(x => x !== item) : [...old, item])
  const addCustom = () => {
@@ -39,11 +42,11 @@ export default function App() {
  }
  const nav = ['Клинический помощник', ...sections]
  return <div className="app-shell">
-  <aside className="sidebar"><div className="brand"><div className="brand-mark">E</div><div><b>EAPF</b><small>Medical reference</small></div></div>
-   <div className="side-label">РАЗДЕЛЫ</div>{nav.map((s,i)=><button key={s} className={active===s?'nav-item active':'nav-item'} onClick={()=>setActive(s)}>{i===0?<Stethoscope size={18}/>:i===1?<Pill size={18}/>:i===2?<Activity size={18}/>:i===3?<FlaskConical size={18}/>:i===4?<BookOpen size={18}/>:i===5?<FileText size={18}/>:<ShieldCheck size={18}/>}{s}</button>)}
+  <aside className={mobileNavOpen?'sidebar mobile-open':'sidebar'}><div className="brand"><div className="brand-mark">E</div><div><b>EAPF</b><small>Medical reference</small></div></div>
+   <div className="side-label">РАЗДЕЛЫ</div>{nav.map((s,i)=><button key={s} className={active===s?'nav-item active':'nav-item'} onClick={()=>{setActive(s);setMobileNavOpen(false)}}>{i===0?<Stethoscope size={18}/>:i===1?<Pill size={18}/>:i===2?<Activity size={18}/>:i===3?<FlaskConical size={18}/>:i===4?<BookOpen size={18}/>:i===5?<FileText size={18}/>:<ShieldCheck size={18}/>}{s}</button>)}
    <div className="sidebar-foot">Экспертная медицинская платформа<br/><span>Версия 0.2 · демонстрационный режим</span></div>
   </aside>
-  <main className="main"><header className="topbar"><button className="mobile-menu" aria-label="Меню"><Menu/></button><span>EAPF · КЛИНИЧЕСКИЙ ПОМОЩНИК</span><span className="top-status"><i/> Основа: иАПФ</span></header>
+  <main className="main"><header className="topbar"><button className="mobile-menu" aria-label="Меню" aria-expanded={mobileNavOpen} onClick={()=>setMobileNavOpen(v=>!v)}><Menu/></button><span>EAPF · КЛИНИЧЕСКИЙ ПОМОЩНИК</span><span className="top-status"><i/> Основа: иАПФ</span></header>
    {active==='Клинический помощник'?<section className="clinical">
     <div className="clinical-intro"><div className="eyebrow">EAPF · CLINICAL WORKSPACE</div><h1>Клинический помощник</h1><p>Введите данные пациента и отметьте сопутствующие состояния. Система поможет структурировать клиническую информацию и подготовить варианты для врачебной оценки.</p></div>
     <div className="patient-panel"><div className="panel-title"><div><span className="step">01</span><h2>Данные пациента</h2></div><span className="optional">Без персональных идентификаторов</span></div>
@@ -53,8 +56,8 @@ export default function App() {
      <div className="selected-line"><b>Выбрано: {selected.length}</b>{selected.length>0&&<button className="text-button" onClick={()=>setSelected([])}>Очистить выбор</button>}</div>
      {conditionGroups.map(group=><div className="condition-group" key={group.title}><h3>{group.title}</h3><div className="condition-options">{group.items.map(item=><button type="button" key={item} className={selected.includes(item)?'condition-chip chosen':'condition-chip'} onClick={()=>toggle(item)}><span className="check">{selected.includes(item)?'✓':'+'}</span>{item}</button>)}</div></div>)}
      {customConditions.length>0&&<div className="condition-group"><h3>Мои добавленные состояния</h3><div className="condition-options">{customConditions.map(item=><button type="button" key={item} className={selected.includes(item)?'condition-chip chosen':'condition-chip'} onClick={()=>toggle(item)}><span className="check">{selected.includes(item)?'✓':'+'}</span>{item}</button>)}</div></div>}
-     <div className="custom-entry"><div className="custom-heading"><Sparkles size={17}/><b>Нет нужного диагноза или состояния?</b></div><p>Опишите его своими словами. В подключённой онлайн-версии здесь можно будет использовать распознавание формулировки и поиск по проверенным медицинским источникам.</p><div className="custom-row"><input value={customText} onChange={e=>{setCustomText(e.target.value);setSuggested('');setNotice('')}} onKeyDown={e=>{if(e.key==='Enter')addCustom()}} placeholder="Например: перенесённый эпизод острого повреждения почек"/><button onClick={addCustom} disabled={!customText.trim()}><Plus size={16}/> Обработать</button></div>
-      {suggested&&<div className="suggestion"><div><span className="suggestion-label">Формулировка для подтверждения врачом</span><b>{suggested}</b></div><div className="suggestion-actions"><button className="confirm-button" onClick={confirmCustom}><CheckCircle2 size={15}/> Добавить в мой список</button><button className="icon-button" onClick={()=>setSuggested('')} aria-label="Отменить"><X size={16}/></button></div></div>}
+     <div className="custom-entry"><div className="custom-heading"><Sparkles size={17}/><b>Нет нужного диагноза или состояния?</b></div><p>ИИ может предложить стандартную формулировку и возможный код классификатора. Это не подтверждение диагноза: каждое предложение требует проверки врачом. В запрос отправляется только введённая формулировка, без данных пациента.</p><div className="custom-row"><input value={customText} onChange={e=>{setCustomText(e.target.value);setSuggested('');setNotice('')}} onKeyDown={e=>{if(e.key==='Enter')addCustom()}} placeholder="Например: перенесённый эпизод острого повреждения почек"/><button onClick={addCustom} disabled={!customText.trim()||normalizing}>{normalizing?'Обработка…':<><Sparkles size={16}/> Нормализовать с ИИ</>}</button></div>
+      {suggested&&<div className="suggestion"><div><span className="suggestion-label">Предложение · требует проверки врачом</span><b>{suggested}</b>{normalization&&<><span className="suggestion-meta">{normalization.explanation}</span><span className="suggestion-meta">Классификация: {normalization.coding_system}{normalization.code?` · ${normalization.code}`:''} · уверенность: {normalization.confidence==='high'?'высокая':normalization.confidence==='medium'?'средняя':'низкая'}</span></>}</div><div className="suggestion-actions"><button className="confirm-button" onClick={confirmCustom}><CheckCircle2 size={15}/> Добавить в мой список</button><button className="icon-button" onClick={()=>{setSuggested('');setNormalization(null)}} aria-label="Отменить"><X size={16}/></button></div></div>}
       {notice&&<div className="inline-notice">{notice}</div>}
      </div>
     </div>
