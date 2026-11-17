@@ -107,6 +107,7 @@ export function buildAntihypertensiveRankings(
   const onArni = /sacubitril|entresto|сакубитрил/i.test(medicines)
   const onAce = /enalapril|ramipril|lisinopril|perindopril|captopril|trandolapril|zofenopril|fosinopril|эналаприл|рамиприл|лизиноприл|периндоприл|каптоприл/i.test(medicines)
   const onArb = /losartan|irbesartan|candesartan|valsartan|telmisartan|olmesartan|эпросартан|лозартан|ирбесартан|кандесартан|валсартан|телмисартан|олмесартан/i.test(medicines)
+  const onSingleRasBlocker = onAce || onArb || onArni
   const onBetaBlocker = /bisoprolol|carvedilol|metoprolol|nebivolol|labetalol|atenolol|бисопролол|карведилол|метопролол|небиволол|лабеталол|атенолол/i.test(medicines)
   const onNonDhp = /verapamil|diltiazem|верапамил|дилтиазем/i.test(medicines)
   const hfrEF = has(selected, 'Сердечная недостаточность со сниженной ФВ') ||
@@ -167,7 +168,9 @@ export function buildAntihypertensiveRankings(
           'В основе схемы — один блокатор РААС (иАПФ или один БРА), длительно действующий дигидропиридиновый БКК и диуретик. Среди вариантов диуретика: индапамид, хлорталидон или гидрохлоротиазид; конкретная комбинация зависит от лаборатории и переносимости.',
           'В карточке БРА показаны альтернативы иАПФ, а не препараты для одновременного добавления. Не сочетать иАПФ с БРА. Перед признанием АГ резистентной подтвердить приверженность, дозы, измерение АД, исключить псевдорезистентность и вторичные причины.',
           ['pathway2', 'esc-htn-2024', 'aha-acc-htn-2025'],
-          ['Блокатор РААС: один иАПФ из отдельного модуля ИЛИ один БРА из списка ниже'],
+          [onSingleRasBlocker
+            ? 'Блокатор РААС уже указан в текущей терапии: проверить дозу и переносимость, не добавлять второй.'
+            : 'Блокатор РААС: один иАПФ из отдельного модуля ИЛИ один сартан (лозартан, ирбесартан, кандесартан, валсартан, телмисартан)'],
         )
         if (egfr !== null && egfr >= 45 && potassium !== null && potassium <= 4.5) {
           add(
@@ -193,7 +196,7 @@ export function buildAntihypertensiveRankings(
           ['esc-htn-2024'],
         )
       }
-    } else if (ckd && albuminuria && !noRasBlockade) {
+    } else if (ckd && albuminuria && !noRasBlockade && !onSingleRasBlocker) {
       add(
         1,
         'ХБП с подтверждённой альбуминурией',
@@ -238,10 +241,11 @@ export function buildAntihypertensiveRankings(
         )
       }
     } else {
+      if (ckd && albuminuria && onSingleRasBlocker) notes.push('Блокатор РААС уже указан в текущей терапии: не добавлять второй; при альбуминурической ХБП оценить дозу, переносимость и лабораторный ответ.')
       const classReason = frail
         ? 'У пожилого/хрупкого пациента разумно выбрать один подходящий препарат в низкой дозе с медленной титрацией; не использовать список как предложение сразу назначить несколько средств.'
         : 'Четыре основные группы первой линии имеют сопоставимый рекомендательный статус: иАПФ или БРА, длительно действующий дигидропиридиновый БКК, тиазидный/тиазидоподобный диуретик. Выбор между ними зависит от клинического профиля, а не от универсального рейтинга молекул.'
-      if (!noRasBlockade) {
+      if (!noRasBlockade && !onSingleRasBlocker) {
         add(
           1,
           'Блокатор РААС',
@@ -282,8 +286,8 @@ export function buildAntihypertensiveRankings(
 
   if (hfrEF) {
     if (!acuteDecomp && !bradycardia) {
-      add(
-        hypertension ? 1 : 1,
+      if (!onBetaBlocker) add(
+        1,
         'Бета-блокатор с доказательствами при ХСНнФВ',
         'Доказанные варианты — выбрать один препарат',
         asthma ? ['bisoprolol', 'metoprolol-succinate'] : ['bisoprolol', 'carvedilol', 'metoprolol-succinate'],
@@ -296,7 +300,7 @@ export function buildAntihypertensiveRankings(
     } else {
       notes.push('ЧСС <50/мин или указана AV-блокада: бета-блокатор не включён в рейтинг до оценки ЭКГ и проводимости.')
     }
-    if (!hyperkalemia && potassium !== null && potassium < 5.0 && egfr !== null && egfr >= 30) {
+    if (!hyperkalemia && potassium !== null && potassium < 5.0 && egfr !== null && egfr >= 30 && !/spironolactone|eplerenone|спиронолактон|эплеренон/i.test(medicines)) {
       add(
         1,
         'Антагонист минералокортикоидных рецепторов при ХСНнФВ',
@@ -350,7 +354,7 @@ export function buildAntihypertensiveRankings(
   }
 
   if (atrialFibrillation && !bradycardia && !acuteDecomp) {
-    add(
+    if (!onBetaBlocker) add(
       1,
       'Контроль ЧСС при фибрилляции предсердий',
       'Бета-блокатор — выбрать один',
@@ -359,7 +363,7 @@ export function buildAntihypertensiveRankings(
       'Учитывать ЧСС, АД, ЭКГ и проводимость. Не сочетать автоматически с верапамилом/дилтиаземом.',
       ['cibis2', 'merit-hf'],
     )
-    if (ef !== null && ef > 40) {
+    if (ef !== null && ef > 40 && !onNonDhp) {
       add(
         1,
         'Альтернатива для контроля ЧСС при сохранённой/умеренно сниженной ФВ',
@@ -404,7 +408,8 @@ export function buildAntihypertensiveRankings(
     notes.push('В текущем списке обнаружены бета-блокатор и верапамил/дилтиазем: проверить риск брадикардии и AV-блокады.')
   }
   if (severeHypotension) {
-    notes.push('Систолическое АД ниже 90 мм рт. ст.: ранжирование антигипертензивных средств не означает рекомендацию усилить терапию; прежде нужна оценка гипотонии и гемодинамики.')
+    notes.push('Систолическое АД ниже 90 мм рт. ст.: автоматический рейтинг препаратов остановлен до оценки гипотонии и гемодинамики.')
+    options.length = 0
   }
   if (orthostasis) {
     notes.push('Ортостатическая гипотензия: оценить АД лёжа/стоя, объёмный статус, падения и текущую терапию до интенсификации.')
