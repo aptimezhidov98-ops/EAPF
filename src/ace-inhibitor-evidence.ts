@@ -210,7 +210,7 @@ export const aceEvidenceStudies: AceStudy[] = [
     intervention: 'Сравнение риска кашля на разных иАПФ против плацебо, БРА и антагонистов кальция; косвенное ранжирование молекул.',
     finding: 'Кашель чаще на иАПФ, чем на плацебо (RR около 2,21) и БРА. Сетевые ранги различались, но сами авторы отмечали сходный риск у иАПФ в целом.',
     limitations: 'Косвенное сравнение, неоднородность испытаний; SUCRA-ранг не является надёжным основанием для выбора молекулы для конкретного пациента.',
-    relevance: 'moderate', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC10423763/'
+    relevance: 'moderate', url: 'https://doi.org/10.1111/jch.14695'
   },
   {
     id: 'ace-adverse-meta-2022', title: 'Adverse outcomes associated with ACE inhibitors: meta-analysis of randomized trials', year: 2022, design: 'Метаанализ РКИ',
@@ -383,6 +383,31 @@ export const aceEvidenceStudies: AceStudy[] = [
     relevance: 'high', url: 'https://pubmed.ncbi.nlm.nih.gov/21931073/'
   }
 
+
+  ,{
+    id: 'consensus-ii-1992', title: 'CONSENSUS II — early enalapril after acute myocardial infarction', year: 1992, design: 'РКИ',
+    population: '6 090 пациентов с острым ИМ, включённых в первые 24 часа; исходное АД выше 100/60 мм рт. ст.; неселективная постинфарктная популяция.',
+    intervention: 'Внутривенный эналаприлат в первые 24 часа с последующим пероральным эналаприлом против плацебо; исследование остановлено досрочно.',
+    finding: 'Смертность за 6 месяцев не снизилась: 11,0% на эналаприле против 10,2% на плацебо; RR 1,10 (95% ДИ 0,93–1,29; p=0,26). Ранняя гипотония (САД <90 или ДАД <50 мм рт. ст.) возникала у 12% против 3%.',
+    limitations: 'Не опровергает пользу эналаприла при хронической ХСНнФВ (SOLVD/CONSENSUS); относится к очень раннему внутривенному старту при неотобранном остром ИМ. Важный сигнал против автоматического назначения в первые часы без оценки гемодинамики.',
+    relevance: 'high', url: 'https://www.nejm.org/doi/full/10.1056/NEJM199209033271002'
+  },
+  {
+    id: 'hope-too-2005', title: 'HOPE-TOO — long-term extension of ramipril cardiovascular outcomes', year: 2005, design: 'РКИ',
+    population: 'Продолжение наблюдения HOPE: 4 528 участников из 174 центров согласились на дополнительное наблюдение около 2,6 года после завершения исходного рандомизированного этапа.',
+    intervention: 'Долгосрочное наблюдение участников, первоначально рандомизированных на рамиприл или плацебо; после завершения основного этапа применение иАПФ в группах стало близким (72% и 68%).',
+    finding: 'Преимущества рамиприла по сердечно-сосудистой смерти, инсульту и госпитализации по поводу СН сохранялись в дополнительном наблюдении; дополнительно отмечались сигналы снижения ИМ, реваскуляризации и новых диагнозов диабета.',
+    limitations: 'Это extension, а не независимое новое РКИ: согласились участвовать около половины исходных центров, после рандомизированной фазы лечение между группами частично сблизилось. Не интерпретировать как отдельную оценку эффекта непрерывного рамиприла.',
+    relevance: 'moderate', url: 'https://pubmed.ncbi.nlm.nih.gov/16129815/'
+  },
+  {
+    id: 'benazepril-advanced-ckd-2006', title: 'Benazepril in advanced chronic renal insufficiency', year: 2006, design: 'РКИ',
+    population: '422 пациента с выраженной хронической почечной недостаточностью; в рандомизированной группе с креатинином 3,1–5,0 мг/дл сравнивали беназеприл и плацебо; среднее наблюдение 3,4 года.',
+    intervention: 'Беназеприл 20 мг/сут против плацебо на фоне обычной антигипертензивной терапии.',
+    finding: 'В рандомизированной группе с тяжёлой почечной недостаточностью первичная комбинированная точка (удвоение креатинина, терминальная ХБП или смерть) возникла у 41% на беназеприле и 60% на плацебо; относительное снижение риска 43% (p=0,005). Протеинурия уменьшилась на 52%, скорость снижения функции почек — на 23%.',
+    limitations: 'Исследование у тщательно отобранных пациентов с продвинутой ХБП под наблюдением; не означает, что беназеприл можно начинать без осторожной оценки калия, креатинина, объёмного статуса и риска гипотонии. Не сравнивал беназеприл с другими иАПФ.',
+    relevance: 'high', url: 'https://www.nejm.org/doi/full/10.1056/NEJMoa053107'
+  }
 ]
 
 export const aceDrugEvidence: AceDrugEvidence[] = [
@@ -402,7 +427,7 @@ export const aceDrugEvidence: AceDrugEvidence[] = [
     postMiDose: 'Вторичная профилактика после ИМ с СН: после 48 ч у клинически и гемодинамически стабильного пациента 2,5 мг 2 раза/сут в течение 3 дней; при непереносимости — 1,25 мг 2 раза/сут 2 дня, затем титровать до целевой 5 мг 2 раза/сут. Постинфарктный режим требует мониторинга.',
     postMiDoseSource: 'https://www.medicines.org.uk/emc/product/8064/smpc',
     doseCaveat: 'Справочная схема из SmPC британского продукта; для назначения сверить локальную инструкцию, функцию почек, объёмный статус, диуретики и показание.',
-    studies: [aceEvidenceStudies[0], aceEvidenceStudies[1], aceEvidenceStudies[2], ...aceEvidenceStudies.filter(study => study.id === 'aask-2002' || study.id === 'rein-1997')]
+    studies: [aceEvidenceStudies[0], aceEvidenceStudies[1], aceEvidenceStudies[2], ...aceEvidenceStudies.filter(study => study.id === 'hope-too-2005' || study.id === 'aask-2002' || study.id === 'rein-1997')]
   },
   {
     id: 'enalapril', inn: 'Эналаприл', evidenceTier: 'Сильные прямые данные по ХСН со сниженной ФВ',
@@ -418,7 +443,7 @@ export const aceDrugEvidence: AceDrugEvidence[] = [
     heartFailureDose: 'При симптомной ХСН: старт 2,5 мг/сут под тщательным медицинским наблюдением; при переносимости постепенная титрация за 2–4 недели до обычной поддерживающей дозы 20 мг/сут (однократно или в 2 приёма); максимум 40 мг/сут в 2 приёма. Контролировать АД, функцию почек и калий.',
     heartFailureDoseSource: 'https://www.medicines.org.uk/emc/product/15554/smpc',
     doseCaveat: 'Дозы для ХСН отличаются от доз при АГ. Начало и титрация при ХСН проводятся под клиническим наблюдением с оценкой АД, калия и функции почек.',
-    studies: [aceEvidenceStudies[3], aceEvidenceStudies[4], aceEvidenceStudies[5], ...aceEvidenceStudies.filter(study => study.id === 'solvd-prevention-1992')]
+    studies: [aceEvidenceStudies[3], aceEvidenceStudies[4], aceEvidenceStudies[5], ...aceEvidenceStudies.filter(study => study.id === 'solvd-prevention-1992' || study.id === 'consensus-ii-1992')]
   },
   {
     id: 'perindopril', inn: 'Периндоприл', evidenceTier: 'Сильные данные при стабильной ИБС; часть данных относится к комбинации',
@@ -507,7 +532,7 @@ export const aceDrugEvidence: AceDrugEvidence[] = [
     hypertensionDose: 'В актуальной американской инструкции DailyMed: старт 10 мг 1 раз/сут (5 мг при сопутствующем диуретике); поддерживающая доза 20–40 мг/сут однократно или в 2 приёма. Для рСКФ <30 мл/мин/1,73 м² старт 5 мг/сут.',
     doseSource: 'https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=6c24bb4c-42d2-483a-b33f-95182b32b93d',
     doseCaveat: 'Это американская инструкция, не подтверждение регистрации/доступности в РФ или Эстонии.',
-    studies: [aceEvidenceStudies[16]]
+    studies: [aceEvidenceStudies[16], ...aceEvidenceStudies.filter(study => study.id === 'benazepril-advanced-ckd-2006')]
   },
   {
     id: 'fosinopril', inn: 'Фозиноприл', evidenceTier: 'Особенности фармакокинетики; клинические исходы ограничены',
