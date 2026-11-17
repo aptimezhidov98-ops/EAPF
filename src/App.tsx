@@ -195,7 +195,7 @@ export default function App() {
           const strategyStudies=sourceStudies.filter(study=>['ascot','hyvet','syst-eur','allhat'].includes(study.id));
           const componentStudies=sourceStudies.filter(study=>!combinationSpecific.includes(study)&&!strategyStudies.includes(study));
           return <details className="strategy-card combination-card combination-details" key={item.title}>
-           <summary className="combination-summary"><span className="strategy-priority">{'Приоритет '+item.priority}</span><span className="combination-summary-title">{displayTitle}</span><span className="combination-chevron">Открыть</span></summary>
+           <summary className="combination-summary"><span className="strategy-priority">{'Приоритет '+item.priority}</span><span className="combination-summary-title">{displayTitle}</span><span className="combination-chevron">⌄</span></summary>
            <div className="combination-expanded">
             <div className="combination-detail-section"><h4>Почему эта комбинация обоснована в данном случае</h4><p>{clinicalWhy}</p><p><b>Механизм:</b> {mechanism}</p></div>
             <div className="combination-detail-section"><h4>Препараты, дозы и титрация</h4>
