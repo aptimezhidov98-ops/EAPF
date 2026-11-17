@@ -23,7 +23,10 @@ export default function App() {
  const [preparedData, setPreparedData] = useState<Record<string, string> | null>(null)
  const prepareData = (event: FormEvent<HTMLFormElement>) => {
   event.preventDefault()
-  const values = Object.fromEntries(new FormData(event.currentTarget).entries()) as Record<string, string>
+  const values: Record<string, string> = {}
+  new FormData(event.currentTarget).forEach((value, key) => {
+   if (typeof value === 'string') values[key] = value
+  })
   setPreparedData(values)
  }
  const [normalization, setNormalization] = useState<{ normalized_term: string; explanation: string; coding_system: string; code: string | null; confidence: 'high' | 'medium' | 'low'; needs_clinician_review: boolean } | null>(null)
