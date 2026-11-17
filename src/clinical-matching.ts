@@ -141,16 +141,16 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
     ? egfrValue >= 90 ? 'G1' : egfrValue >= 60 ? 'G2' : egfrValue >= 45 ? 'G3a' : egfrValue >= 30 ? 'G3b' : egfrValue >= 15 ? 'G4' : 'G5'
     : null
   const medicationText = (patient.medications || '').toLowerCase()
-  const bpMatch = (patient.blood_pressure || '').match(/(\\d{2,3})\\s*[/]\\s*(\\d{2,3})/)
+  const bpMatch = (patient.blood_pressure || '').match(/(\d{2,3})\s*[/]\s*(\d{2,3})/)
   const systolicBp = bpMatch ? Number(bpMatch[1]) : null
   const diastolicBp = bpMatch ? Number(bpMatch[2]) : null
-  const usesArni = medicationText.includes('сакубитрил') || medicationText.includes('энтресто') || medicationText.includes('entresto')
-  const usesArb = ['лозартан','валсартан','кандесартан','телмисартан','ирбесартан','олмесартан','эпросартан'].some(name => medicationText.includes(name))
-  const alreadyUsesAce = ['рамиприл','эналаприл','периндоприл','лизиноприл','каптоприл','фозиноприл','трандолаприл','зофеноприл'].some(name => medicationText.includes(name))
-  const usesPotassiumRiskMedicine = ['спиронолактон','эплеренон','амилорид','триамтерен','калия','калий'].some(name => medicationText.includes(name))
-  const usesNsaid = ['ибупрофен','диклофенак','напроксен','кеторолак','мелоксикам','нимесулид','целекоксиб'].some(name => medicationText.includes(name))
-  const usesLithium = medicationText.includes('литий') || medicationText.includes('лития')
-  const usesDri = medicationText.includes('алискирен') || medicationText.includes('расилез')
+  const usesArni = medicationText.includes('сакубитрил') || medicationText.includes('энтресто') || medicationText.includes('entresto') || medicationText.includes('sacubitril')
+  const usesArb = ['лозартан','валсартан','кандесартан','телмисартан','ирбесартан','олмесартан','эпросартан','losartan','valsartan','candesartan','telmisartan','irbesartan','olmesartan','eprosartan'].some(name => medicationText.includes(name))
+  const alreadyUsesAce = ['рамиприл','эналаприл','периндоприл','лизиноприл','каптоприл','фозиноприл','трандолаприл','зофеноприл','ramipril','enalapril','perindopril','lisinopril','captopril','fosinopril','trandolapril','zofenopril'].some(name => medicationText.includes(name))
+  const usesPotassiumRiskMedicine = ['спиронолактон','эплеренон','амилорид','триамтерен','калия','калий','spironolactone','eplerenone','amiloride','triamterene','potassium'].some(name => medicationText.includes(name))
+  const usesNsaid = ['ибупрофен','диклофенак','напроксен','кеторолак','мелоксикам','нимесулид','целекоксиб','ibuprofen','diclofenac','naproxen','ketorolac','meloxicam','nimesulide','celecoxib'].some(name => medicationText.includes(name))
+  const usesLithium = medicationText.includes('литий') || medicationText.includes('лития') || medicationText.includes('lithium')
+  const usesDri = medicationText.includes('алискирен') || medicationText.includes('расилез') || medicationText.includes('aliskiren')
   const weightKg = Number(patient.weight)
   const heightCm = Number(patient.height)
   const bmi = weightKg > 0 && heightCm > 0 ? Number((weightKg / ((heightCm / 100) ** 2)).toFixed(1)) : null
@@ -252,6 +252,7 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
     systolicBp,
     diastolicBp,
     hasAceIndication,
+    canCompare: hasAceIndication && !hardStop,
     candidates: hasAceIndication && !hardStop ? profiles.map(profile => ({
       ...profile,
       ...evidence(profile),
