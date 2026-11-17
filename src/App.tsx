@@ -143,6 +143,15 @@ export default function App() {
            <h4>{item.title}</h4>
            <p>{item.reason}</p>
            <div className="combination-dose-list">
+            {item.drugIds.some(id=>/ACEI|иАПФ|ARB|БРА|блокатор РААС/i.test(id))&&<div className="combination-dose-group">
+             <div className="combination-dose-group-title">Блокатор РААС — выбрать только один: иАПФ ИЛИ сартан</div>
+             <p className="dose-caveat">Не сочетать иАПФ с сартаном. Ниже приведены молекулы как альтернативы, а не компоненты одной схемы.</p>
+             {antihypertensiveDrugProfiles.filter(drug=>drug.group==='Сартаны').map(drug=>{
+              const guide=doseGuides[drug.id];
+              return <div className="combination-dose-row" key={drug.id}><div className="combination-dose-name"><b>{drug.name}</b><span>{guide?('Старт: '+guide.start+' · Максимум: '+guide.maximum):drug.dose}</span></div><div className="combination-dose-links"><a href={drug.instructionUrl} target="_blank" rel="noreferrer">Инструкция ↗</a>{drug.studies.map(study=><a key={study.id} href={study.url} target="_blank" rel="noreferrer">{study.title} ↗</a>)}</div>{guide&&<details className="dose-expand"><summary>Диапазон доз и титрация</summary><div><p><b>Обычный диапазон:</b> {guide.usual}</p><p><b>Шаг титрации:</b> {guide.titration}</p><p><b>Интервал:</b> {guide.interval}</p><p className="dose-caveat">{guide.context}</p></div></details>}</div>
+             })}
+             {aceDrugEvidence.map(drug=><div className="combination-dose-row" key={drug.id}><div className="combination-dose-name"><b>{drug.inn}</b><span>{drug.hypertensionDose}</span></div><div className="combination-dose-links"><a href={drug.doseSource} target="_blank" rel="noreferrer">Инструкция ↗</a>{drug.studies.slice(0,3).map(study=><a key={study.id} href={study.url} target="_blank" rel="noreferrer">{study.title} ↗</a>)}</div></div>)}
+            </div>}
             {[...grouped.entries()].map(([group,drugs])=><div className="combination-dose-group" key={group}>
              <div className="combination-dose-group-title">{drugs.length>1?'Выбрать один препарат из группы: '+group:group}</div>
              {drugs.map(drug=>{
