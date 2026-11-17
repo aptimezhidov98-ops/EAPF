@@ -28,6 +28,10 @@ export type AceDrugEvidence = {
   doseSource: string
   doseCaveat: string
   specialDosing?: string
+  heartFailureDose?: string
+  heartFailureDoseSource?: string
+  postMiDose?: string
+  postMiDoseSource?: string
   studies: AceStudy[]
 }
 
@@ -393,6 +397,10 @@ export const aceDrugEvidence: AceDrugEvidence[] = [
     effectTiming: 'Начало снижения АД обычно через 1–2 ч, максимум после разовой дозы примерно через 3–6 ч, эффект сохраняется около суток. Полный антигипертензивный эффект титрованной терапии оценивается в течение нескольких недель.',
     hypertensionDose: 'При АГ в одной из актуальных SmPC: старт 2,5 мг 1 раз/сут; у пациентов с высокой активностью РААС или риском гипотонии — 1,25 мг под наблюдением. Удвоение дозы с интервалом 2–4 недели; максимум 10 мг/сут.',
     doseSource: 'https://www.medicines.org.uk/emc/product/8067/smpc',
+    heartFailureDose: 'При симптомной ХСН у пациента, стабилизированного на диуретике: старт 1,25 мг 1 раз/сут; затем удвоение каждые 1–2 недели по переносимости до максимума 10 мг/сут; предпочтительно разделить на 2 приёма. Это схема для ХСН, не для обычной АГ.',
+    heartFailureDoseSource: 'https://www.medicines.org.uk/emc/product/8064/smpc',
+    postMiDose: 'Вторичная профилактика после ИМ с СН: после 48 ч у клинически и гемодинамически стабильного пациента 2,5 мг 2 раза/сут в течение 3 дней; при непереносимости — 1,25 мг 2 раза/сут 2 дня, затем титровать до целевой 5 мг 2 раза/сут. Постинфарктный режим требует мониторинга.',
+    postMiDoseSource: 'https://www.medicines.org.uk/emc/product/8064/smpc',
     doseCaveat: 'Справочная схема из SmPC британского продукта; для назначения сверить локальную инструкцию, функцию почек, объёмный статус, диуретики и показание.',
     studies: [aceEvidenceStudies[0], aceEvidenceStudies[1], aceEvidenceStudies[2], ...aceEvidenceStudies.filter(study => study.id === 'aask-2002' || study.id === 'rein-1997')]
   },
@@ -407,6 +415,8 @@ export const aceDrugEvidence: AceDrugEvidence[] = [
     effectTiming: 'Начало действия обычно около 1 ч, максимум снижения АД через 4–6 ч; при обычных дозах гемодинамический эффект часто сохраняется не менее 24 ч. Полная оценка стабильного контроля АД требует нескольких недель.',
     hypertensionDose: 'При лёгкой АГ в SmPC: старт 5–10 мг 1 раз/сут; дальнейшая поддерживающая доза индивидуальна, часто 20 мг/сут; в отдельных инструкциях максимум 40 мг/сут.',
     doseSource: 'https://www.medicines.org.uk/emc/product/565/smpc',
+    heartFailureDose: 'При симптомной ХСН: старт 2,5 мг/сут под тщательным медицинским наблюдением; при переносимости постепенная титрация за 2–4 недели до обычной поддерживающей дозы 20 мг/сут (однократно или в 2 приёма); максимум 40 мг/сут в 2 приёма. Контролировать АД, функцию почек и калий.',
+    heartFailureDoseSource: 'https://www.medicines.org.uk/emc/product/15554/smpc',
     doseCaveat: 'Дозы для ХСН отличаются от доз при АГ. Начало и титрация при ХСН проводятся под клиническим наблюдением с оценкой АД, калия и функции почек.',
     studies: [aceEvidenceStudies[3], aceEvidenceStudies[4], aceEvidenceStudies[5], ...aceEvidenceStudies.filter(study => study.id === 'solvd-prevention-1992')]
   },
@@ -435,6 +445,8 @@ export const aceDrugEvidence: AceDrugEvidence[] = [
     effectTiming: 'Начало снижения АД обычно около 1 ч, максимум примерно через 6 ч; эффект обнаруживается и через 24 ч, но может быть слабее пикового.',
     hypertensionDose: 'В SmPC: обычно старт 10 мг 1 раз/сут; эффективная поддерживающая доза часто 20 мг 1 раз/сут; при недостаточном эффекте титрация через 2–4 недели. В долгосрочных исследованиях применялись дозы до 80 мг/сут, но это не обычная целевая доза.',
     doseSource: 'https://www.medicines.org.uk/emc/product/7143/smpc',
+    heartFailureDose: 'При симптомной ХСН: старт 2,5 мг 1 раз/сут под медицинским наблюдением; увеличивать не более чем на 10 мг за шаг и не чаще одного раза в 2 недели до максимально переносимой дозы, максимум 35 мг 1 раз/сут. Контролировать АД, рСКФ/креатинин и калий.',
+    heartFailureDoseSource: 'https://www.medicines.org.uk/emc/product/10115/smpc',
     doseCaveat: 'Стартовую дозу снижают при гиповолемии, выраженной активации РААС и снижении функции почек. Постинфарктная схема отличается от лечения АГ.',
     studies: [aceEvidenceStudies[9], aceEvidenceStudies[10], ...aceEvidenceStudies.filter(study => study.id === 'allhat-lisinopril-2002' || study.id === 'euclid-lisinopril-1997')]
   },
@@ -463,6 +475,8 @@ export const aceDrugEvidence: AceDrugEvidence[] = [
     effectTiming: 'Обычно используется 1 раз/сут; эффект сохраняется на протяжении суток. После ИМ дозу титруют постепенно при стабильной гемодинамике.',
     hypertensionDose: 'В SmPC: старт 0,5 мг 1 раз/сут; поддерживающая доза обычно 1–2 мг/сут; титрация с интервалами 2–4 недели; максимум 4 мг/сут.',
     doseSource: 'https://www.medicines.org.uk/emc/product/8171/smpc',
+    postMiDose: 'При дисфункции ЛЖ после острого ИМ: начать в стационаре не ранее 3-го дня после события, только после стабилизации гемодинамики; старт 0,5 мг 1 раз/сут, постепенно повышать до максимума 4 мг 1 раз/сут по переносимости и под строгим мониторингом АД.',
+    postMiDoseSource: 'https://www.medicines.org.uk/emc/product/8173/smpc',
     doseCaveat: 'Постинфарктная доза и титрация отличаются от обычной терапии АГ; начинать после стабилизации гемодинамики.',
     studies: [aceEvidenceStudies[13], ...aceEvidenceStudies.filter(study => study.id === 'peace-trandolapril-2004')]
   },
