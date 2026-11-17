@@ -112,8 +112,11 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
   const hasAlbuminuria = has(selected, 'Альбуминурия / протеинурия')
   const hasCkd = hasCkdDiagnosis || hasAlbuminuria
   const hasDiabetes = has(selected, 'Сахарный диабет 1 типа', 'Сахарный диабет 2 типа')
-  const hasCad = has(selected, 'Ишемическая болезнь сердца', 'Стабильная стенокардия', 'Состояние после инфаркта миокарда', 'Заболевание периферических артерий', 'Перенесённый инсульт / ТИА')
+  const hasCad = has(selected, 'Ишемическая болезнь сердца', 'Стабильная стенокардия', 'Состояние после инфаркта миокарда', 'Острый инфаркт миокарда (первые 24 часа)', 'Заболевание периферических артерий', 'Перенесённый инсульт / ТИА')
   const hasHf = has(selected, 'Хроническая сердечная недостаточность', 'Сердечная недостаточность со сниженной ФВ')
+  const hasHfReduced = has(selected, 'Сердечная недостаточность со сниженной ФВ')
+  const isAcuteMi = has(selected, 'Острый инфаркт миокарда (первые 24 часа)')
+  const ageYears = Number(patient.age)
   const highRiskCombination = hasDiabetes && (hasHypertension || hasCkd || hasCad)
   const potassium = Number(patient.potassium)
   const acuteMiHours = Number(patient.mi_hours)
@@ -129,6 +132,7 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
   const bmi = weightKg > 0 && heightCm > 0 ? Number((weightKg / ((heightCm / 100) ** 2)).toFixed(1)) : null
   const urgentSymptom = has(selected, 'Боль в груди в настоящее время', 'Одышка в покое')
   const hardStop = urgentSymptom || usesArni || has(selected, 'Беременность или её планирование', 'Ангионевротический отёк в анамнезе', 'Двусторонний стеноз почечных артерий / стеноз артерии единственной почки', 'Грудное вскармливание') || potassium >= 5.5
+  const adultDosingAllowed = Number.isFinite(ageYears) && ageYears >= 18 && !hardStop
   const caution = [
     ...(has(selected, 'Гиперкалиемия') ? ['Выбрана гиперкалиемия: необходимо проверить фактический калий и причину нарушения; при выраженном повышении алгоритм останавливает сопоставление.'] : []),
     ...(has(selected, 'Обезвоживание / гиповолемия') ? ['Отмечена гиповолемия: повышен риск выраженной гипотонии и ухудшения функции почек после начала блокады РААС.'] : []),
@@ -146,10 +150,10 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
   ]
   const evidence = (profile: DrugProfile) => {
     const studies = profile.studyEvidence.filter(study => {
-      if (profile.id === 'ramipril') return highRiskCombination || hasCad
+      if (profile.id === 'ramipril') return ageYears >= 55 && (hasCad || (hasDiabetes && (hasHypertension || hasCkd)))
       if (profile.id === 'perindopril') return has(selected, 'Ишемическая болезнь сердца', 'Стабильная стенокардия')
-      if (profile.id === 'enalapril') return hasHf
-      if (profile.id === 'lisinopril') return has(selected, 'Состояние после инфаркта миокарда') && Number.isFinite(acuteMiHours) && acuteMiHours >= 0 && acuteMiHours <= 24
+      if (profile.id === 'enalapril') return hasHfReduced
+      if (profile.id === 'lisinopril') return isAcuteMi && Number.isFinite(acuteMiHours) && acuteMiHours >= 0 && acuteMiHours <= 24
       return false
     })
     const ruText = [
@@ -179,6 +183,8 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
     hasClinicalInput: selected.length > 0 || Object.values(patient).some(value => value.trim()),
     hardStop,
     urgentSymptom,
+    adultDosingAllowed,
+    ageYears: Number.isFinite(ageYears) && ageYears > 0 ? ageYears : null,
     caution,
     bmi,
     interactionWarnings: caution.filter(item => /списке лекарств|лити[йя]|НПВП|БРА/i.test(item)),
