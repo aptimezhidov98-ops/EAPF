@@ -1,12 +1,4 @@
-export type EvidenceStatus =
-  | 'class_first_line'
-  | 'drug_specific_first_line'
-  | 'class_second_line'
-  | 'drug_specific_second_line'
-  | 'not_mentioned'
-  | 'needs_review'
-
-type StudyEvidence = {
+export type StudyEvidence = {
   title: string
   relevance: string
   limitation: string
@@ -111,41 +103,52 @@ const has = (selected: string[], ...values: string[]) =>
 
 export function buildAceInhibitorComparison(selected: string[], patient: Record<string, string>) {
   const hasHypertension = has(selected, 'Артериальная гипертензия')
-  const hasCkd = has(selected, 'Хроническая болезнь почек', 'Альбуминурия / протеинурия')
+  const hasCkdDiagnosis = has(selected, 'Хроническая болезнь почек')
+  const hasAlbuminuria = has(selected, 'Альбуминурия / протеинурия')
+  const hasCkd = hasCkdDiagnosis || hasAlbuminuria
   const hasDiabetes = has(selected, 'Сахарный диабет 1 типа', 'Сахарный диабет 2 типа')
   const hasCad = has(selected, 'Ишемическая болезнь сердца', 'Стабильная стенокардия', 'Состояние после инфаркта миокарда', 'Заболевание периферических артерий', 'Перенесённый инсульт / ТИА')
   const hasHf = has(selected, 'Хроническая сердечная недостаточность', 'Сердечная недостаточность со сниженной ФВ')
   const highRiskCombination = hasDiabetes && (hasCkd || hasCad)
-  const hardStop = has(selected, 'Беременность или её планирование', 'Ангионевротический отёк в анамнезе')
+  const potassium = Number(patient.potassium)
+  const acuteMiHours = Number(patient.mi_hours)
+  const hardStop = has(selected, 'Беременность или её планирование', 'Ангионевротический отёк в анамнезе', 'Двусторонний стеноз почечных артерий / стеноз артерии единственной почки', 'Грудное вскармливание') || potassium >= 5.5
   const caution = [
-    ...(has(selected, 'Гиперкалиемия') ? ['Выбрана гиперкалиемия: до оценки калия и причин нарушения нельзя формировать предпочтение среди иАПФ.'] : []),
+    ...(has(selected, 'Гиперкалиемия') ? ['Выбрана гиперкалиемия: необходимо проверить фактический калий и причину нарушения; при выраженном повышении алгоритм останавливает сопоставление.'] : []),
     ...(has(selected, 'Обезвоживание / гиповолемия') ? ['Отмечена гиповолемия: повышен риск выраженной гипотонии и ухудшения функции почек после начала блокады РААС.'] : []),
     ...(has(selected, 'Ортостатическая гипотензия') ? ['Отмечена ортостатическая гипотензия: необходима оценка гемодинамики и причин до выбора препарата и дозы.'] : []),
     ...(Number(patient.egfr) > 0 && Number(patient.egfr) < 30 ? ['рСКФ ниже 30 мл/мин/1,73 м²: требуется отдельная проверка дозирования и мониторинга по инструкции каждого препарата.'] : []),
-    ...(Number(patient.potassium) >= 5.0 ? ['Введён калий ≥5,0 ммоль/л: требуется клиническая оценка до выбора и титрации иАПФ.'] : []),
+    ...(Number.isFinite(potassium) && potassium >= 5.0 && potassium < 5.5 ? ['Введён калий 5,0–5,4 ммоль/л: требуется клиническая оценка и повторная проверка до выбора и титрации иАПФ.'] : []),
   ]
   const evidence = (profile: DrugProfile) => {
     const studies = profile.studyEvidence.filter(study => {
       if (profile.id === 'ramipril') return highRiskCombination || hasCad
       if (profile.id === 'perindopril') return has(selected, 'Ишемическая болезнь сердца', 'Стабильная стенокардия')
       if (profile.id === 'enalapril') return hasHf
-      if (profile.id === 'lisinopril') return has(selected, 'Состояние после инфаркта миокарда')
+      if (profile.id === 'lisinopril') return has(selected, 'Состояние после инфаркта миокарда') && Number.isFinite(acuteMiHours) && acuteMiHours >= 0 && acuteMiHours <= 24
       return false
     })
     const ruText = hasHypertension
-      ? 'иАПФ — один из основных классов терапии АГ; конкретное МНН не выделено как универсально предпочтительное.'
-      : hasCkd
-        ? 'Нужна оценка конкретного показания и альбуминурии; точное лекарственное положение сверяется по полной действующей версии российских КР.'
+      ? 'Основной класс антигипертензивной терапии; для большинства пациентов КР предпочитают комбинацию блокатора РААС (иАПФ или БРА) с АК или диуретиком. Конкретное МНН не выделено.'
+      : hasCkd && hasAlbuminuria
+        ? 'Рассматривать иАПФ только при соответствующем фенотипе ХБП/альбуминурии; точное показание и класс рекомендации необходимо сверить с полным текстом КР.'
+        : hasCkdDiagnosis
+          ? 'Сам факт ХБП без категории альбуминурии недостаточен для вывода о преимуществе или обязательности конкретного иАПФ.'
         : 'В текущем наборе нет проверенного положения РФ, выделяющего конкретное МНН для отмеченного сочетания.'
     const intText = hasHypertension
-      ? 'ESC 2024 и AHA/ACC 2025: иАПФ/БРА относятся к основным классам первой линии; конкретное МНН не ранжируется.'
-      : hasCkd
-        ? 'KDIGO 2024 поддерживает блокаду РААС при соответствующих категориях ХБП/альбуминурии; выбор конкретного иАПФ не ранжируется.'
+      ? 'ESC 2024 и AHA/ACC 2025: иАПФ/БРА — варианты первой линии на уровне класса; конкретное МНН не ранжируется.'
+      : hasCkd && hasAlbuminuria
+        ? 'KDIGO 2024 поддерживает блокаду РААС при соответствующих категориях ХБП с альбуминурией; выбор конкретного иАПФ не ранжируется.'
+        : hasCkdDiagnosis
+          ? 'KDIGO 2024: необходимость блокады РААС зависит от категории альбуминурии и клинического контекста; одного диагноза ХБП недостаточно для вывода.'
         : 'Для этого сочетания требуется отдельная проверка профильного международного руководства.'
     return {
       ruText,
       intText,
       studies,
+      ruStatus: hasHypertension ? 'Основной класс; МНН не выделено' : hasCkd && hasAlbuminuria ? 'Нужно сверить показание по КР' : 'Не ранжировано по РФ',
+      intStatus: hasHypertension ? 'Первая линия на уровне класса' : hasCkd && hasAlbuminuria ? 'Рекомендация класса по фенотипу ХБП' : 'Не ранжировано международными КР',
+      studyStatus: studies.length ? 'Есть исследование этой молекулы' : 'Нет привязанного исследования для выбора',
     }
   }
   return {
