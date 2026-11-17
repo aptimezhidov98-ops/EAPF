@@ -1,12 +1,23 @@
+import { aceInhibitors } from './ace-inhibitors'
+
 export type Drug = { name: string; className: string; status: string; note: string }
-export const drugs: Drug[] = [
- { name: 'Рамиприл', className: 'иАПФ', status: 'Карточка в разработке', note: 'Пролекарство; активный метаболит — рамиприлат.' },
- { name: 'Периндоприл', className: 'иАПФ', status: 'Карточка в разработке', note: 'Пролекарство; существуют разные соли и лекарственные формы.' },
- { name: 'Эналаприл', className: 'иАПФ', status: 'Карточка в разработке', note: 'Пролекарство; активный метаболит — эналаприлат.' },
- { name: 'Лизиноприл', className: 'иАПФ', status: 'Карточка в разработке', note: 'Активное вещество, не требует метаболической активации.' },
- { name: 'Каптоприл', className: 'иАПФ', status: 'Карточка в разработке', note: 'Короткодействующий представитель класса.' },
- { name: 'Фозиноприл', className: 'иАПФ', status: 'Карточка в разработке', note: 'Пути выведения включают почечный и печёночный компоненты.' },
- { name: 'Трандолаприл', className: 'иАПФ', status: 'Карточка в разработке', note: 'Пролекарство; активный метаболит — трандолаприлат.' },
- { name: 'Зофеноприл', className: 'иАПФ', status: 'Карточка в разработке', note: 'Сульфгидрильный представитель класса.' }
+
+// The UI catalogue is derived from the structured ACE-inhibitor registry.
+// Product availability and clinical details are deliberately not inferred here.
+export const drugs: Drug[] = aceInhibitors.map(drug => ({
+  name: drug.inn,
+  className: 'иАПФ',
+  status: drug.estoniaAvailability === 'not_checked'
+    ? 'Регистрация и актуальная инструкция в Эстонии не проверены'
+    : 'Требует проверки',
+  note: drug.note,
+}))
+
+export const sections = [
+  'Препараты',
+  'Диагнозы',
+  'Лаборатория',
+  'Клинические рекомендации',
+  'Исследования',
+  'Источники',
 ]
-export const sections = ['Препараты', 'Диагнозы', 'Лаборатория', 'Клинические рекомендации', 'Исследования', 'Источники']
