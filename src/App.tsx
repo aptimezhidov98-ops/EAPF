@@ -76,6 +76,8 @@ export default function App() {
  const adverseEvidence = aceEvidenceStudies.find(study => study.id === 'ace-adverse-meta-2022')
  const comparativeEvidence = aceEvidenceStudies.find(study => study.id === 'ace-comparative-cohort-2018')
  const coughEvidence = aceEvidenceStudies.find(study => study.id === 'ace-cough-meta-2023')
+ const networkEvidence = aceEvidenceStudies.find(study => study.id === 'ace-hf-network-2016')
+ const cadthEvidence = aceEvidenceStudies.find(study => study.id === 'cadth-ace-comparative-2008')
  const nav = ['Клинический помощник', ...sections]
  return <div className="app-shell">
   <aside className={mobileNavOpen?'sidebar mobile-open':'sidebar'}><div className="brand"><div className="brand-mark">E</div><div><b>EAPF</b><small>Medical reference</small></div></div>
@@ -138,6 +140,8 @@ export default function App() {
         {adverseEvidence&&<details className="evidence-study"><summary>{adverseEvidence.title} · 2022 <span>Безопасность</span></summary><div><p>{adverseEvidence.finding}</p><p className="dose-caveat">{adverseEvidence.limitations}</p><a className="evidence-link" href={adverseEvidence.url} target="_blank" rel="noreferrer">Открыть обзор ↗</a></div></details>}
         {comparativeEvidence&&<details className="evidence-study"><summary>{comparativeEvidence.title} · 2018 <span>Сравнительная когорта</span></summary><div><p>{comparativeEvidence.finding}</p><p className="dose-caveat">{comparativeEvidence.limitations}</p><a className="evidence-link" href={comparativeEvidence.url} target="_blank" rel="noreferrer">Открыть исследование ↗</a></div></details>}
         {coughEvidence&&<details className="evidence-study"><summary>{coughEvidence.title} · 2023 <span>Переносимость</span></summary><div><p>{coughEvidence.population}</p><p>{coughEvidence.finding}</p><p className="dose-caveat">{coughEvidence.limitations} Сетевой SUCRA-ранг не следует использовать как персональный рейтинг риска кашля.</p><a className="evidence-link" href={coughEvidence.url} target="_blank" rel="noreferrer">Открыть метаанализ ↗</a></div></details>}
+        {networkEvidence&&<details className="evidence-study"><summary>{networkEvidence.title} · 2016 <span>Сравнение молекул</span></summary><div><p>{networkEvidence.population}</p><p>{networkEvidence.finding}</p><p className="dose-caveat">{networkEvidence.limitations} Результаты не использовать для клинического ранжирования.</p><a className="evidence-link" href={networkEvidence.url} target="_blank" rel="noreferrer">Открыть публикацию ↗</a></div></details>}
+        {cadthEvidence&&<details className="evidence-study"><summary>{cadthEvidence.title} · 2008 <span>Исторический HTA-обзор</span></summary><div><p>{cadthEvidence.finding}</p><p className="dose-caveat">{cadthEvidence.limitations}</p><a className="evidence-link" href={cadthEvidence.url} target="_blank" rel="noreferrer">Открыть отчёт CADTH ↗</a></div></details>}
        </div>
        <div className="eapf-method"><b>{evidenceMethods.title}</b><ul>{evidenceMethods.principles.map(item=><li key={item}>{item}</li>)}</ul></div>
       </div>:<div className="russian-recommendation-view">
