@@ -4,7 +4,8 @@ import { drugs, sections } from './data'
 import { russianClinicalRecommendations, primarySources } from './recommendations'
 import { buildAceInhibitorComparison } from './clinical-matching'
 import { buildEapfAceRecommendations, aceEvidenceStudies, aceDrugEvidence, evidenceMethods } from './ace-inhibitor-evidence'
-import { buildAntihypertensivePlan, antihypertensiveDrugProfiles, antihypertensiveStudies } from './antihypertensive-evidence'
+import { buildAntihypertensivePlan, antihypertensiveDrugProfiles } from './antihypertensive-evidence'
+import { allAntihypertensiveStudies, buildAntihypertensiveRankings } from './antihypertensive-ranking'
 
 const conditionGroups = [
  { title: 'Сердечно-сосудистые заболевания', items: ['Артериальная гипертензия','Хроническая сердечная недостаточность','Сердечная недостаточность со сниженной ФВ','Ишемическая болезнь сердца','Состояние после инфаркта миокарда','Острый инфаркт миокарда (первые 24 часа)','Стабильная стенокардия','Фибрилляция предсердий','Перенесённый инсульт / ТИА','Заболевание периферических артерий'] },
@@ -74,6 +75,7 @@ export default function App() {
  const aceComparison = useMemo(() => buildAceInhibitorComparison(selected, preparedData || {}), [selected, preparedData])
  const eapfAceRecommendations = useMemo(() => buildEapfAceRecommendations(selected, preparedData || {}), [selected, preparedData])
  const antihypertensivePlan = useMemo(() => buildAntihypertensivePlan(selected, preparedData || {}), [selected, preparedData])
+ const antihypertensiveRankings = useMemo(() => buildAntihypertensiveRankings(selected, preparedData || {}), [selected, preparedData])
  const classOutcomeEvidence = aceEvidenceStudies.find(study => study.id === 'ace-cv-class-meta-2026')
  const adverseEvidence = aceEvidenceStudies.find(study => study.id === 'ace-adverse-meta-2022')
  const comparativeEvidence = aceEvidenceStudies.find(study => study.id === 'ace-comparative-cohort-2018')
@@ -90,7 +92,7 @@ export default function App() {
    <div className="side-label">РАЗДЕЛЫ</div>{nav.map((s,i)=><button key={s} className={active===s?'nav-item active':'nav-item'} onClick={()=>{setActive(s);setMobileNavOpen(false)}}>{i===0?<Stethoscope size={18}/>:i===1?<Pill size={18}/>:i===2?<Activity size={18}/>:i===3?<FlaskConical size={18}/>:i===4?<BookOpen size={18}/>:i===5?<FileText size={18}/>:<ShieldCheck size={18}/>}{s}</button>)}
    <div className="sidebar-foot">Экспертная медицинская платформа<br/><span>Версия 0.2 · демонстрационный режим</span></div>
   </aside>
-  <main className="main"><header className="topbar"><button className="mobile-menu" aria-label="Меню" aria-expanded={mobileNavOpen} onClick={()=>setMobileNavOpen(v=>!v)}><Menu/></button><span>EAPF · КЛИНИЧЕСКИЙ ПОМОЩНИК</span><span className="top-status"><i/> Основа: иАПФ</span></header>
+  <main className="main"><header className="topbar"><button className="mobile-menu" aria-label="Меню" aria-expanded={mobileNavOpen} onClick={()=>setMobileNavOpen(v=>!v)}><Menu/></button><span>EAPF · КЛИНИЧЕСКИЙ ПОМОЩНИК</span><span className="top-status"><i/> База: антигипертензивная терапия</span></header>
    {active==='Клинический помощник'?<section className="clinical"><form className="clinical-form" onSubmit={prepareData}>
     <div className="workspace-brand"><div className="workspace-brand-mark"><Plus size={25}/></div><div className="workspace-brand-copy"><b>Медбаза</b><span>МЕДИЦИНСКАЯ СИСТЕМА ПОДДЕРЖКИ РЕШЕНИЙ</span></div><span className="workspace-brand-tag">EAPF</span></div><div className="clinical-intro"><div className="eyebrow">КЛИНИЧЕСКИЙ СЛУЧАЙ</div><h1>Подбор терапии</h1><p>Создайте клинический случай, чтобы подобрать обоснованные варианты лечения с учётом индивидуальных особенностей пациента.</p></div>
     <div className="patient-panel"><div className="panel-title"><div><span className="step">01</span><h2>Данные пациента</h2></div><span className="optional">Без персональных идентификаторов</span></div>
@@ -119,6 +121,24 @@ export default function App() {
       {recommendationTab==='eapf'?<div className="eapf-recommendation-view">
        <div className="eapf-intro"><b>Рекомендации EAPF</b><p>Препараты упорядочены по соответствию имеющимся клиническим доказательствам для выбранного профиля. Одинаковый уровень означает равную позицию; это не доказательство превосходства одного препарата.</p></div>
        {antihypertensivePlan.warnings.map((warning,index)=><div className="match-alert" key={'ah-warning-'+index}>{warning}</div>)}
+       {antihypertensiveRankings.options.length>0&&<section className="eapf-context antihypertensive-ranked-view">
+        <div className="eapf-context-heading"><div><h3>{antihypertensiveRankings.title}</h3><p>{antihypertensiveRankings.summary}</p></div></div>
+        <div className="ranked-drug-list">{antihypertensiveRankings.options.map((option,index)=>{
+         const equal=antihypertensiveRankings.options.filter(item=>item.rank===option.rank).length>1;
+         const profileNames=option.drugIds.map(id=>antihypertensiveDrugProfiles.find(drug=>drug.id===id)).filter((drug):drug is typeof antihypertensiveDrugProfiles[number]=>Boolean(drug));
+         return <article className="ranked-drug" key={option.title+'-'+index}>
+          <div className="ranked-drug-top"><span className="rank-number">{'Место '+option.rank+(equal?' · равный приоритет':'')}</span><span className="rank-level">{option.group}</span></div>
+          <h4>{option.title}</h4>
+          <div className="strategy-medicines">{profileNames.map(drug=><span className="strategy-medicine" key={drug.id}>{drug.name}</span>)}{option.additionalNames?.map(name=><span className="strategy-medicine muted" key={name}>{name}</span>)}</div>
+          <p>{option.rationale}</p>
+          {option.caution&&<p className="strategy-restriction">{option.caution}</p>}
+          <div className="drug-source-links">{profileNames.map(drug=><a key={drug.id} href={drug.instructionUrl} target="_blank" rel="noreferrer">Инструкция: {drug.name} ↗</a>)}</div>
+         </article>
+        })}</div>
+       </section>}
+       {antihypertensiveRankings.notes.map((note,index)=><div className="match-alert" key={'ranking-note-'+index}>{note}</div>)}
+       <details className="plan-details">
+        <summary>Посмотреть варианты комбинаций и дополнительные ограничения</summary>
        {(antihypertensivePlan.items.length>0||antihypertensivePlan.hasHypertension)&&<section className="clinical-plan">
         <div className="clinical-plan-heading"><div><span className="plan-kicker">ПОДБОР ВСЕХ ОСНОВНЫХ КЛАССОВ</span><h3>Антигипертензивная стратегия для этого случая</h3><p>{antihypertensivePlan.summary}</p></div></div>
         {antihypertensivePlan.items.map((item,index)=><article className="strategy-card" key={item.title}>
@@ -127,11 +147,12 @@ export default function App() {
          <div className="strategy-medicines">{item.drugIds.length?item.drugIds.map((id,j)=>{const profile=antihypertensiveDrugProfiles.find(drug=>drug.id===id);return <span className="strategy-medicine" key={id+'-'+j}>{profile?profile.name:id}</span>}):<span className="strategy-medicine muted">Нет безопасного варианта для автоматического предложения</span>}</div>
          <p>{item.reason}</p>
          {item.restriction&&<p className="strategy-restriction">{item.restriction}</p>}
-         <div className="drug-source-links">{item.drugIds.map(id=>antihypertensiveDrugProfiles.find(drug=>drug.id===id)).filter((drug):drug is typeof antihypertensiveDrugProfiles[number]=>Boolean(drug)).map(drug=><a key={drug.id} href={drug.instructionUrl} target="_blank" rel="noreferrer">{drug.name}: инструкция ↗</a>)}{item.sources.map(source=>{const study=antihypertensiveStudies.find(entry=>entry.title.toLowerCase().includes(source.toLowerCase())||entry.id.toLowerCase()===source.toLowerCase().replace(/ /g,'-'));const guideUrl=source==='RU-АГ-2024'?'https://cr.minzdrav.gov.ru/preview-cr/62_3':source==='ESC-2024'?'https://academic.oup.com/eurheartj/article/45/38/3912/7741010':undefined;const href=study?.url||guideUrl;return href?<a key={source} href={href} target="_blank" rel="noreferrer">{source} ↗</a>:null})}</div>
+         <div className="drug-source-links">{item.drugIds.map(id=>antihypertensiveDrugProfiles.find(drug=>drug.id===id)).filter((drug):drug is typeof antihypertensiveDrugProfiles[number]=>Boolean(drug)).map(drug=><a key={drug.id} href={drug.instructionUrl} target="_blank" rel="noreferrer">Инструкция: {drug.name} ↗</a>)}</div>
         </article>)}
         {!antihypertensivePlan.hasHypertension&&<p className="strategy-restriction">Отдельные блоки могут относиться к ХСН, ИБС, ФП или постинфарктному состоянию. Для общего подбора АГ выберите диагноз «Артериальная гипертензия».</p>}
        </section>}
-       {!aceComparison.hasAceIndication&&<div className="match-alert">По выбранным данным пока не установлено показание для сравнения иАПФ. Сначала подтвердите диагноз или синдром.</div>}
+       </details>
+       {!aceComparison.hasAceIndication&&antihypertensiveRankings.options.length===0&&<div className="match-alert">По выбранным данным пока не установлено показание для сравнения иАПФ. Сначала подтвердите диагноз или синдром.</div>}
        {aceComparison.hasAceIndication&&!aceComparison.canCompare&&<div className="match-alert danger">Ранжирование остановлено из-за критического фактора безопасности. Требуется клиническая оценка.</div>}
        {aceComparison.canCompare&&eapfAceRecommendations.length===0&&<div className="match-alert">Для этой комбинации пока недостаточно проверенных данных, чтобы сформировать рейтинг препаратов.</div>}
        {aceComparison.canCompare&&(()=>{
@@ -148,7 +169,7 @@ export default function App() {
           const rank=groups.indexOf(drug.rankScore)+1;const same=scored.filter(item=>item.rankScore===drug.rankScore).length>1;
           return <article className="ranked-drug" key={drug.id}><div className="ranked-drug-top"><span className="rank-number">{'Место '+rank+(same?' · совместно':'')}</span><span className="rank-level">{drug.rankScore===3?'Высокая доказательная поддержка':drug.rankScore===2?'Умеренная поддержка':drug.rankScore===1?'Ограниченные данные':'Данные не установлены'}</span></div>
            <h4>{drug.inn}</h4><p>{drug.shortConclusion}</p><p className="rank-context">Релевантные профили: {drug.contexts.join(' · ')}</p>
-           <div className="drug-source-links"><a href={drug.doseSource} target="_blank" rel="noreferrer">Инструкция ↗</a>{drug.studies.slice(0,3).map((study:any)=><a key={study.id} href={study.url} target="_blank" rel="noreferrer">{study.title} ↗</a>)}</div></article>
+           <div className="drug-source-links"><a href={drug.doseSource} target="_blank" rel="noreferrer">Инструкция ↗</a></div></article>
          })}</div>:<p className="reference-empty">Для этого профиля нет отдельных молекул, которые можно обоснованно ранжировать.</p>}
          {eapfAceRecommendations.map(recommendation=><p className="eapf-interpretation" key={recommendation.heading}>{recommendation.interpretation}</p>)}
         </section>;
@@ -174,7 +195,7 @@ export default function App() {
      </div>
     </details>)}
     <h3>Общие исследования классов и комбинаций</h3>
-    {antihypertensiveStudies.map(study=><details className="evidence-study" key={study.id}><summary>{study.title} · {study.year}</summary><div><p>{study.result}</p><p className="dose-caveat">{study.limits}</p><a className="evidence-link" href={study.url} target="_blank" rel="noreferrer">Открыть публикацию ↗</a></div></details>)}
+    {allAntihypertensiveStudies.map(study=><details className="evidence-study" key={study.id}><summary>{study.title} · {study.year}</summary><div><p>{study.result}</p><p className="dose-caveat">{study.limits}</p><a className="evidence-link" href={study.url} target="_blank" rel="noreferrer">Открыть публикацию ↗</a></div></details>)}
     <div className="reference-disclaimer">Эта база является предварительно структурированным обзором исследований, а не систематическим обзором с формальной оценкой риска смещения. Дозы и регистрационный статус необходимо проверять по действующей национальной инструкции. Прямые данные разных популяций и конечных точек не позволяют ранжировать все молекулы между собой.</div>
    </div>:active==='Источники и инструкции'?<div className="reference-list"><div className="reference-intro"><b>Реестры, инструкции и первоисточники</b><p>Каждое клиническое положение должно быть связано с источником, датой проверки и статусом экспертного утверждения.</p></div>{primarySources.map(item=><article className="reference-card" key={item.id}><h3>{item.title}</h3><p className="reference-publisher">{item.publisher}</p><p>{item.purpose}</p><div className="reference-meta"><span>Проверено: {item.checkedAt}</span></div><a href={item.url} target="_blank" rel="noreferrer">Открыть источник ↗</a></article>)}</div>:<div className="placeholder"><BookOpen size={28}/><h3>Раздел подготовлен к наполнению</h3><p>Структура платформы расширяется: здесь появятся проверенные материалы и ссылки на первоисточники.</p></div>}
    <div className="notice"><ShieldCheck size={20}/><p><b>Важно:</b> содержимое этой версии — демонстрационная структура, а не клиническая рекомендация. Дозировки, показания и противопоказания будут добавляться только после проверки источников и экспертного утверждения.</p></div></section>}
