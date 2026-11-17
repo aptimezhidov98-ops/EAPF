@@ -199,13 +199,16 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
       ruText,
       intText,
       studies,
+      rationale: studies.length
+        ? 'Включён в сравнение, поскольку для этой молекулы найдено исследование в одной из отмеченных клинических групп. Это подтверждает наличие данных по препарату, но не доказывает его превосходство над другими иАПФ.'
+        : 'Включён как представитель класса для сопоставления. В привязанной базе нет исследования именно этой молекулы, соответствующего выбранному сочетанию; индивидуальное преимущество не установлено.',
       ruStatus: [
-        ...(hasHypertension ? ['АГ: основной класс, МНН не выделено'] : []),
+        ...(hasHypertension ? ['Первая линия — класс иАПФ; конкретное МНН не выделено'] : []),
         ...(hasCad ? ['ИБС/ССЗ: иАПФ по отдельным показаниям, МНН не ранжируется'] : []),
         ...(!hasHypertension && !hasCad ? ['Для данного сочетания нет проверенного положения с выделением МНН'] : []),
       ].join(' · '),
       intStatus: [
-        ...(hasHypertension ? ['АГ: первая линия на уровне класса'] : []),
+        ...(hasHypertension ? ['Первая линия — класс иАПФ/БРА; конкретное МНН не выделено'] : []),
         ...(hasCkdDiagnosis && acrCategory === 'A2' && hasDiabetes ? ['KDIGO ХБП+СД A2/A3: 1B (класс)'] : []),
         ...(hasCkdDiagnosis && acrCategory === 'A3' && !hasDiabetes ? ['KDIGO ХБП A3 без СД: 1B (класс)'] : []),
         ...(hasCkdDiagnosis && acrCategory === 'A2' && !hasDiabetes ? ['KDIGO ХБП A2 без СД: 2C (класс)'] : []),
@@ -213,7 +216,7 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
         ...(hasCkdDiagnosis && acrCategory === null ? ['KDIGO: категория ACR не определена'] : []),
         ...(!hasHypertension && !hasCkdDiagnosis ? ['Не ранжировано международными КР для выбранных данных'] : []),
       ].join(' · '),
-      studyStatus: studies.length ? 'Есть исследование этой молекулы' : 'Нет привязанного исследования для выбора',
+      studyStatus: studies.length ? 'Есть исследование молекулы в выбранной клинической группе' : 'Нет привязанного исследования под это сочетание',
     }
   }
   return {
@@ -233,7 +236,7 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
     renalMonitoring: hasCkdDiagnosis ? 'KDIGO 2024: после начала иАПФ/БРА или увеличения дозы следует проверить АД, креатинин и калий в течение 2–4 недель; точный срок зависит от рСКФ и исходного калия.' : null,
     interactionWarnings: caution.filter(item => /списке лекарств|лити[йя]|НПВП|БРА/i.test(item)),
     hasAceIndication,
-    candidates: hasAceIndication ? profiles.map(profile => ({
+    candidates: hasAceIndication && !hardStop ? profiles.map(profile => ({
       ...profile,
       ...evidence(profile),
       status: hardStop ? 'Не ранжировать: отмечено противопоказание/критический фактор' :
