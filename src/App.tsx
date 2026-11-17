@@ -242,6 +242,7 @@ export default function App() {
             {item.restriction&&<p className="strategy-restriction">{item.restriction}</p>}
            </div>
           </details>
+         })}
          {!antihypertensivePlan.hasHypertension&&<p className="strategy-restriction">Отдельные блоки могут относиться к ХСН, ИБС, ФП или постинфарктному состоянию. Для общего подбора АГ выберите диагноз «Артериальная гипертензия».</p>}
         </section>}
         {antihypertensiveRankings.options.length>0&&<section className="eapf-context antihypertensive-ranked-view">
