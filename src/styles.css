@@ -130,3 +130,23 @@
 
 /* Simplified ranked recommendation results */
 .ranked-drug-list{display:grid;gap:10px;margin-top:14px}.ranked-drug{background:#fff;border:1px solid #dce6ec;border-radius:14px;padding:15px 16px}.ranked-drug-top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}.rank-number{font-size:11px;font-weight:800;color:#286b8b;background:#e9f3f8;border-radius:20px;padding:5px 9px}.rank-level{font-size:11px;color:#718590}.ranked-drug h4{font-size:18px;margin:10px 0 6px;color:#203e50}.ranked-drug p{font-size:13px;line-height:1.55;color:#687b86;margin:0 0 10px}.drug-source-links{display:flex;flex-wrap:wrap;gap:7px 13px;border-top:1px solid #edf1f3;padding-top:9px}.drug-source-links a{font-size:11px;color:#347fa8;text-decoration:underline;text-underline-offset:3px}.ru-drug-line{background:#fff;border:1px solid #dce6ec;border-radius:13px;padding:14px 16px;margin:10px 0}.ru-drug-line h3{font-size:15px;margin:0 0 5px}.ru-drug-line p{font-size:11px;color:#87949d;margin:0 0 8px}.ru-drug-line b{font-size:13px;line-height:1.5;color:#345365}
+
+
+/* Multi-class antihypertensive strategy */
+.clinical-plan{display:grid;gap:11px;margin:14px 0 20px}
+.clinical-plan-heading{border:1px solid #d9e7ed;background:linear-gradient(135deg,#eef6fa,#f8fafb);border-radius:13px;padding:15px 16px}
+.plan-kicker{display:block;color:#6792a8;font-size:9px;font-weight:800;letter-spacing:1.2px;margin-bottom:6px}
+.clinical-plan-heading h3{font:800 17px Manrope;color:#244c63;margin:0 0 6px}
+.clinical-plan-heading p{font-size:11px;line-height:1.55;color:#71838e;margin:0}
+.strategy-card{background:#fff;border:1px solid #dfe8ed;border-radius:13px;padding:14px 15px;box-shadow:0 2px 10px #18313d07}
+.strategy-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.strategy-priority{display:inline-flex;border-radius:20px;background:#e7f2f7;color:#2f7598;font-size:10px;font-weight:800;padding:5px 9px}
+.strategy-index{color:#a0afb6;font-size:10px;font-weight:700;letter-spacing:1px}
+.strategy-card h4{font:700 14px Manrope;color:#244653;margin:6px 0 9px}
+.strategy-medicines{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px}
+.strategy-medicine{display:inline-flex;align-items:center;background:#f0f5f7;border:1px solid #e0e9ed;border-radius:7px;color:#375b6a;font-size:10px;font-weight:700;padding:6px 8px}
+.strategy-medicine.muted{color:#829098;font-weight:500}
+.strategy-card>p{font-size:11px;line-height:1.6;color:#667b84;margin:7px 0}
+.strategy-card .strategy-restriction,.strategy-restriction{font-size:10px;line-height:1.55;color:#7c704f;background:#f8f6f0;border-left:2px solid #d5c18d;border-radius:6px;padding:8px 10px;margin-top:8px}
+.strategy-card .drug-source-links{padding-top:8px;margin-top:9px}
+@media(max-width:760px){.clinical-plan-heading{padding:13px}.clinical-plan-heading h3{font-size:15px}.strategy-card{padding:12px}.strategy-card h4{font-size:13px}.strategy-card>p{font-size:10.5px}}
