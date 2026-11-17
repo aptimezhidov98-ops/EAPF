@@ -18,3 +18,61 @@
 
 .renal-monitoring{background:#f4f7f5;border-left:2px solid #7ca99c;padding:9px 11px!important;border-radius:6px;color:#58716a!important;font-size:10px!important}
 .renal-monitoring a{display:inline-block;color:#28685d;font-weight:700;text-decoration:none;margin-left:4px}
+
+
+/* Patient-specific recommendations: two focused views and compact evidence cards */
+.recommendation-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 14px;padding:5px;background:#edf2f2;border-radius:10px}
+.recommendation-tab{border:1px solid transparent;border-radius:8px;background:transparent;color:#60767c;padding:11px 12px;font:700 11px 'DM Sans',sans-serif;cursor:pointer}
+.recommendation-tab.active{background:#fff;border-color:#e0e8e8;color:#1d4650;box-shadow:0 2px 8px #18313d0b}
+.eapf-recommendation-view,.russian-recommendation-view{display:grid;gap:13px}
+.eapf-intro{border:1px solid #dce8e4;background:#f4f8f6;border-radius:10px;padding:15px;color:#31574f}
+.eapf-intro>b,.eapf-method>b{font:700 13px Manrope}
+.eapf-intro p{font-size:11px;line-height:1.6;color:#647b77;margin:6px 0 0}
+.eapf-context{border:1px solid #e0e9e9;background:#fff;border-radius:11px;padding:14px}
+.eapf-context-heading{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px}
+.context-number{flex:0 0 26px;height:26px;display:grid;place-items:center;border-radius:8px;background:#e8f1ee;color:#527e72;font-size:10px;font-weight:700}
+.eapf-context-heading h3{font:700 13px Manrope;color:#254751;margin:1px 0 5px}
+.eapf-context-heading p{font-size:11px;line-height:1.6;color:#6c8084;margin:0}
+.eapf-drug-cards{display:grid;gap:8px}
+.eapf-drug-card{border:1px solid #e3ebeb;border-radius:9px;overflow:hidden;background:#fcfdfd}
+.eapf-drug-card[open]{border-color:#b9d0c9}
+.eapf-drug-card>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 13px;cursor:pointer}
+.eapf-drug-card>summary::-webkit-details-marker{display:none}
+.eapf-drug-title{display:grid;gap:4px}
+.eapf-drug-title b{font:700 13px Manrope;color:#21444e}
+.eapf-drug-title small{font-size:10px;color:#668078;line-height:1.4}
+.expand-label{flex:0 0 auto;font-size:9px;font-weight:700;color:#588078;background:#eaf2ef;border-radius:5px;padding:5px 7px}
+.eapf-drug-content{padding:0 13px 13px;border-top:1px solid #edf1f1}
+.eapf-drug-content h4{font:700 11px Manrope;color:#456b62;margin:13px 0 5px}
+.eapf-drug-content p{font-size:10.5px;line-height:1.65;color:#63787d;margin:5px 0}
+.drug-conclusion{margin-top:11px;background:#f0f6f3;border-radius:8px;padding:10px}
+.drug-conclusion>b{font-size:10px;color:#355f55}
+.drug-conclusion p{font-size:11px;color:#4e6d64;margin:5px 0 0}
+.evidence-study{margin:8px 0;border:1px solid #e8eded;border-radius:8px;background:#fff;overflow:hidden}
+.evidence-study>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;color:#31554f;font-size:10px;font-weight:700;cursor:pointer}
+.evidence-study>summary::-webkit-details-marker{display:none}
+.evidence-study>summary:after{content:'+';color:#639184;font-size:15px;font-weight:500}
+.evidence-study[open]>summary:after{content:'−'}
+.evidence-study>summary span{font-size:9px;color:#819398;font-weight:500;white-space:nowrap}
+.evidence-study>div{border-top:1px solid #edf1f1;padding:3px 10px 9px}
+.evidence-study>div p{font-size:10px;line-height:1.6;color:#657a7e;margin:6px 0}
+.evidence-study .evidence-relevance{font-size:9px;color:#638074}
+.eapf-interpretation{margin:12px 0 0;padding:9px 10px;background:#f5f7f6;border-radius:7px;color:#6a7d80;font-size:10px;line-height:1.6}
+.eapf-meta-evidence{border:1px solid #e1e9e9;background:#fff;border-radius:10px;padding:13px}
+.eapf-meta-evidence>b{font:700 12px Manrope;color:#34565e}
+.eapf-method{background:#f3f6f6;border-radius:9px;padding:13px}
+.eapf-method>b{color:#3c5d62}
+.eapf-method ul{padding-left:17px;margin:8px 0 0}
+.eapf-method li{color:#6d8185;font-size:10px;line-height:1.55;margin:5px 0}
+.dose-caveat{background:#f6f7f4;border-radius:7px;padding:8px;color:#7e704f!important;font-size:9.5px!important;line-height:1.55!important}
+.evidence-link{display:inline-block;margin:4px 5px 3px 0;color:#28685d;font-size:9px;font-weight:700;text-decoration:none;white-space:nowrap}
+.evidence-link:hover{text-decoration:underline}
+@media(max-width:760px){
+ .recommendation-tabs{gap:5px}
+ .recommendation-tab{padding:10px 7px;font-size:10px}
+ .eapf-context{padding:11px}
+ .eapf-drug-card>summary{align-items:flex-start}
+ .expand-label{font-size:8px}
+ .evidence-study>summary{align-items:flex-start}
+ .evidence-study>summary span{white-space:normal;text-align:right}
+}
