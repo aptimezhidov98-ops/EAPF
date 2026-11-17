@@ -412,6 +412,10 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
   const hasCkd = has('Хроническая болезнь почек')
   const hasDiabetes = has('Сахарный диабет 1 типа', 'Сахарный диабет 2 типа')
   const hasCvdRisk = has('Ишемическая болезнь сердца', 'Состояние после инфаркта миокарда', 'Заболевание периферических артерий', 'Перенесённый инсульт / ТИА')
+  const hasStroke = has('Перенесённый инсульт / ТИА')
+  const hasPad = has('Заболевание периферических артерий')
+  const ageYears = Number(patient.age)
+  const hopeVascularProfile = Number.isFinite(ageYears) && ageYears >= 55
   const hasHighRisk = hasDiabetes && hasCvdRisk || (has('Сахарный диабет 2 типа') && has('Артериальная гипертензия'))
   const hasMi = has('Острый инфаркт миокарда (первые 24 часа)', 'Состояние после инфаркта миокарда')
   const hasCoronary = has('Ишемическая болезнь сердца', 'Стабильная стенокардия', 'Состояние после инфаркта миокарда')
@@ -421,7 +425,12 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
   const acrIsMgG = /mg\s*\/\s*g|мг\s*\/\s*г/.test(acr)
   const acrIsMgMmol = /mg\s*\/\s*mmol|мг\s*\/\s*ммоль/.test(acr)
   const albuminuriaA2A3 = acrNum !== null && ((acrIsMgG && acrNum >= 30) || (acrIsMgMmol && acrNum >= 3))
-  const cards = (ids: string[]) => ids.map(id => aceDrugEvidence.find(drug => drug.id === id)).filter((drug): drug is AceDrugEvidence => Boolean(drug))
+  const cards = (ids: string[], studyMap: Record<string, string[]> = {}) => ids.map(id => {
+    const drug = aceDrugEvidence.find(item => item.id === id)
+    if (!drug) return null
+    const relevantIds = studyMap[id]
+    return relevantIds ? { ...drug, studies: drug.studies.filter(study => relevantIds.includes(study.id)) } : drug
+  }).filter((drug): drug is AceDrugEvidence => Boolean(drug))
   const recommendations: EapfRecommendation[] = []
   if (hasUnspecifiedHf) {
     recommendations.push({ heading: 'Хроническая сердечная недостаточность без указанной ФВ', summary: 'Нужно уточнить ФВ ЛЖ. Исследования SOLVD и другие данные эналаприла относятся к систолической дисфункции / ХСНнФВ; автоматически переносить их на ХСН с сохранённой ФВ нельзя.', candidates: [], interpretation: 'После уточнения фенотипа СН программа сможет сопоставить препараты и соответствующие исследования.' })
@@ -430,7 +439,7 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
     recommendations.push({
       heading: 'Острый или перенесённый инфаркт миокарда',
       summary: 'После ИМ иАПФ исследовались в нескольких крупных РКИ, но выбор конкретной молекулы зависит от времени после события, ФВ ЛЖ, наличия СН и стабильности гемодинамики.',
-      candidates: cards(['ramipril','captopril','trandolapril','lisinopril','zofenopril','enalapril']),
+      candidates: cards(['ramipril','captopril','trandolapril','lisinopril','zofenopril'], { ramipril: ['aire-1993'], captopril: ['save-1992','isis4-1995'], trandolapril: ['trace-1995'], lisinopril: ['gissi3-1994'], zofenopril: ['smile-1995','smile2-2003'] }),
       interpretation: 'Не следует механически ранжировать эти препараты: исследования проводились в разных временных окнах и фенотипах (ранний острый ИМ, постинфарктная дисфункция ЛЖ, постинфарктная СН). Прямое превосходство одной молекулы над всеми остальными не установлено.'
     })
   }
@@ -438,7 +447,7 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
     recommendations.push({
       heading: 'Хроническая сердечная недостаточность со сниженной ФВ',
       summary: 'Эналаприл имеет крупные landmark-РКИ по снижению смертности при ХСНнФВ; лизиноприл имеет данные по дозированию и госпитализациям. Выбор иАПФ должен вписываться в современную комплексную терапию ХСНнФВ.',
-      candidates: cards(['enalapril','lisinopril']),
+      candidates: cards(['enalapril','lisinopril'], { enalapril: ['consensus-1987','solvd-treatment-1991','vheft2-1991'], lisinopril: ['atlas-1999'] }),
       interpretation: 'Сопоставление 2018 года после propensity-score и дозового matching не выявило статистически значимых различий смертности между эналаприлом, лизиноприлом и рамиприлом. Это наблюдательные данные, а не доказательство строгой эквивалентности. Рекомендации современной терапии ХСН могут предпочитать ARNI у подходящих пациентов.'
     })
   }
@@ -446,7 +455,7 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
     recommendations.push({
       heading: 'Стабильная ишемическая болезнь сердца',
       summary: 'Периндоприл имеет прямое плацебо-контролируемое исследование EUROPA при стабильной ИБС. Рамиприл может быть релевантен при сочетании коронарного/сосудистого заболевания с высоким общим сосудистым риском.',
-      candidates: cards(['perindopril','ramipril','enalapril']),
+      candidates: cards(['perindopril', ...(hopeVascularProfile ? ['ramipril'] : [])], { perindopril: ['europa-2003'], ramipril: ['hope-2000'] }),
       interpretation: 'EUROPA и HOPE изучали разные популяции и не сравнивали молекулы между собой. В рамках данных нельзя утверждать, что периндоприл всегда лучше рамиприла или наоборот.'
     })
   }
@@ -454,7 +463,7 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
     recommendations.push({
       heading: 'ХБП с повышенной альбуминурией',
       summary: 'Имеется обоснование для рассмотрения блокады РААС на уровне класса. У беназеприла есть AIPRI по прогрессированию хронической почечной недостаточности; у имидаприла — небольшое исследование с альбуминурией при СД 1 типа; у рамиприла — данные MICRO-HOPE в группе высокого сердечно-сосудистого риска.',
-      candidates: cards(['benazepril','ramipril','imidapril','fosinopril']),
+      candidates: cards(['benazepril','ramipril','imidapril','fosinopril'], { benazepril: ['aipri-1996'], ramipril: ['micro-hope-2000'], imidapril: ['japan-iddm-2002'], fosinopril: ['fosidial-2002','fosinopril-enalapril-1998'] }),
       interpretation: 'Эти исследования различаются по этиологии ХБП и конечным точкам: AIPRI изучал почечную комбинированную конечную точку; JAPAN-IDDM и некоторые другие исследования — главным образом альбуминурию; HOPE/MICRO-HOPE — высокий СС-риск. Нельзя сводить их в прямой рейтинг нефропротекции.'
     })
   } else if (hasCkd) {
@@ -469,15 +478,31 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
     recommendations.push({
       heading: 'Сахарный диабет и высокий сердечно-сосудистый риск',
       summary: 'HOPE/MICRO-HOPE дают прямые исходные данные по рамиприлу в высокорисковой диабетической популяции. Это доказательство для заданного профиля, а не универсальная рекомендация рамиприла при любом СД.',
-      candidates: cards(['ramipril','perindopril','enalapril']),
+      candidates: cards(['ramipril','perindopril'], { ramipril: ['hope-2000','micro-hope-2000'], perindopril: ['advance-2007'] }),
       interpretation: 'Если АГ/сосудистое заболевание сопровождаются диабетом, ХБП или альбуминурией, проверять показание к блокаде РААС, рСКФ, калий и текущую терапию. Не считать метаболический синдром или ожирение достаточным основанием для преимущества отдельного иАПФ.'
+    })
+  }
+  if (hasStroke && !hasMi) {
+    recommendations.push({
+      heading: 'Вторичная профилактика после инсульта или ТИА',
+      summary: 'PROGRESS изучал стратегию снижения АД на основе периндоприла; наибольший эффект был у режима периндоприл + индапамид. Данные не следует интерпретировать как доказательство одинакового эффекта монотерапии периндоприлом.',
+      candidates: cards(['perindopril','ramipril'], { perindopril: ['progress-2001'], ramipril: ['hope-2000'] }),
+      interpretation: 'Решение зависит от типа перенесённого инсульта, времени после события, уровня АД и сопутствующих состояний. PROGRESS — исследование стратегии, где диуретик добавлялся по протоколу; отдельный эффект комбинации иАПФ + индапамид нельзя приписывать одному периндоприлу.'
+    })
+  }
+  if (hasPad && !hasMi && !hasCoronary && hopeVascularProfile) {
+    recommendations.push({
+      heading: 'Заболевание периферических артерий и высокий сосудистый риск',
+      summary: 'HOPE включало пациентов с установленным сосудистым заболеванием, в том числе не только коронарным, и поддерживает рассмотрение рамиприла у соответствующего высокорискового пациента.',
+      candidates: cards(['ramipril'], { ramipril: ['hope-2000'] }),
+      interpretation: 'HOPE не доказывает преимущество рамиприла у каждого пациента с заболеванием периферических артерий; нужно проверить возраст, сопутствующие факторы риска, переносимость и актуальное показание к блокаде РААС.'
     })
   }
   if (has('Артериальная гипертензия') && recommendations.length === 0) {
     recommendations.push({
       heading: 'Артериальная гипертензия без специфического сопутствующего фенотипа',
       summary: 'иАПФ — один из возможных классов антигипертензивной терапии. Для обычной АГ доступные исследования в большей степени позволяют сравнивать контроль АД и переносимость; они не дают надёжного универсального рейтинга конкретных иАПФ по смертности.',
-      candidates: cards(['ramipril','enalapril','perindopril','lisinopril','benazepril','captopril']),
+      candidates: cards(['ramipril','enalapril','perindopril','lisinopril','benazepril','captopril'], { ramipril: [], enalapril: [], perindopril: [], lisinopril: [], benazepril: [], captopril: [] }),
       interpretation: 'При выборе учитывать целевое АД, возраст, рСКФ, калий, альбуминурию, сердечную недостаточность, ИБС, переносимость, кратность приёма, стоимость/доступность и локальную инструкцию.'
     })
   }
