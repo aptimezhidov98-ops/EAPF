@@ -121,7 +121,7 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
         : null
     : null
   const hasAlbuminuria = selectedAlbuminuria || (hasCkdDiagnosis && (acrCategory === 'A2' || acrCategory === 'A3'))
-  const hasCkd = hasCkdDiagnosis || selectedAlbuminuria
+  const hasCkd = hasCkdDiagnosis
   const hasDiabetes = has(selected, 'Сахарный диабет 1 типа', 'Сахарный диабет 2 типа')
   const hasCad = has(selected, 'Ишемическая болезнь сердца', 'Стабильная стенокардия', 'Состояние после инфаркта миокарда', 'Острый инфаркт миокарда (первые 24 часа)', 'Заболевание периферических артерий', 'Перенесённый инсульт / ТИА')
   const hasHfReduced = has(selected, 'Сердечная недостаточность со сниженной ФВ')
@@ -144,9 +144,12 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
   const heightCm = Number(patient.height)
   const bmi = weightKg > 0 && heightCm > 0 ? Number((weightKg / ((heightCm / 100) ** 2)).toFixed(1)) : null
   const urgentSymptom = has(selected, 'Боль в груди в настоящее время', 'Одышка в покое')
-  const hardStop = urgentSymptom || usesArni || has(selected, 'Беременность или её планирование', 'Ангионевротический отёк в анамнезе', 'Двусторонний стеноз почечных артерий / стеноз артерии единственной почки', 'Грудное вскармливание') || potassium >= 5.5
-  const adultDosingAllowed = Number.isFinite(ageYears) && ageYears >= 18 && !hardStop
+  const breastfeeding = has(selected, 'Грудное вскармливание')
+  const pediatricPatient = Number.isFinite(ageYears) && ageYears > 0 && ageYears < 18
+  const hardStop = urgentSymptom || usesArni || pediatricPatient || has(selected, 'Беременность или её планирование', 'Ангионевротический отёк в анамнезе', 'Двусторонний стеноз почечных артерий / стеноз артерии единственной почки') || potassium >= 5.5
+  const adultDosingAllowed = Number.isFinite(ageYears) && ageYears >= 18 && !hardStop && !breastfeeding
   const caution = [
+    ...(breastfeeding ? ['Грудное вскармливание: ограничения зависят от конкретного иАПФ и возраста/состояния ребёнка; взрослые дозовые сведения скрыты до проверки инструкции выбранного продукта.'] : []),
     ...(has(selected, 'Гиперкалиемия') ? ['Выбрана гиперкалиемия: необходимо проверить фактический калий и причину нарушения; при выраженном повышении алгоритм останавливает сопоставление.'] : []),
     ...(has(selected, 'Обезвоживание / гиповолемия') ? ['Отмечена гиповолемия: повышен риск выраженной гипотонии и ухудшения функции почек после начала блокады РААС.'] : []),
     ...(has(selected, 'Ортостатическая гипотензия') ? ['Отмечена ортостатическая гипотензия: необходима оценка гемодинамики и причин до выбора препарата и дозы.'] : []),
@@ -171,7 +174,8 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
     })
     const ruText = [
       ...(hasHypertension ? ['АГ: иАПФ — один из основных классов терапии. Для большинства пациентов КР предпочитают комбинацию блокатора РААС (иАПФ или БРА) с антагонистом кальция или диуретиком; конкретное МНН не выделено.'] : []),
-      ...(hasCkd && hasAlbuminuria ? ['ХБП с альбуминурией: необходимо проверить категорию альбуминурии и точное показание к блокаде РААС по полной действующей версии российских КР.'] : []),
+      ...(hasCkdDiagnosis && hasAlbuminuria ? ['ХБП с альбуминурией: необходимо проверить категорию альбуминурии и точное показание к блокаде РААС по полной действующей версии российских КР.'] : []),
+      ...(selectedAlbuminuria && !hasCkdDiagnosis ? ['Отмечена альбуминурия/протеинурия без выбранного диагноза ХБП: подтвердить стойкость находки и клиническое значение; система не считает это установленной ХБП.'] : []),
       ...(hasCkdDiagnosis && !hasAlbuminuria ? ['ХБП без указанной категории альбуминурии: одного диагноза недостаточно, чтобы сделать вывод о показании или преимуществе конкретного иАПФ.'] : []),
       ...(hasCad ? ['Атеросклеротическое ССЗ: российские КР по стабильной ИБС рассматривают иАПФ при соответствующих прогностически значимых сопутствующих состояниях; конкретное МНН не ранжируется.'] : []),
       ...(!hasHypertension && !hasCkd && !hasCad ? ['Для отмеченного сочетания в текущей версии нет проверенного лекарственного положения РФ.'] : []),
@@ -184,6 +188,7 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
       ...(hasCkdDiagnosis && acrCategory === 'A3' && hasDiabetes ? ['KDIGO 2024: при ХБП и диабете с A2/A3 рекомендован иАПФ или БРА (1B); конкретное МНН не выделено.'] : []),
       ...(hasCkdDiagnosis && acrCategory === 'A1' ? ['KDIGO 2024: при ХБП A1 блокаду РААС рассматривают при отдельных показаниях, например АГ или ХСН со сниженной ФВ; сама категория A1 не даёт универсального показания.'] : []),
       ...(hasCkdDiagnosis && acrCategory === null ? ['KDIGO 2024: категория альбуминурии ACR не определена. Введите числовой ACR с единицами mg/g или mg/mmol; одного диагноза ХБП недостаточно для проверки альбуминурийных рекомендаций.'] : []),
+      ...(selectedAlbuminuria && !hasCkdDiagnosis ? ['ACR/протеинурия отмечены без подтверждённой ХБП; рекомендации KDIGO для конкретных категорий ХБП нельзя автоматически применить без оценки диагноза и стойкости альбуминурии.'] : []),
       ...(hasCad ? ['ИБС: доказательства отдельных молекул следует читать в контексте популяции и конечных точек конкретных исследований; они не устанавливают взаимное превосходство иАПФ.'] : []),
       ...(!hasHypertension && !hasCkd && !hasCad ? ['Для этого сочетания требуется отдельная проверка профильного международного руководства.'] : []),
     ].join(' ')
@@ -213,6 +218,8 @@ export function buildAceInhibitorComparison(selected: string[], patient: Record<
     hardStop,
     urgentSymptom,
     adultDosingAllowed,
+    pediatricPatient,
+    breastfeeding,
     ageYears: Number.isFinite(ageYears) && ageYears > 0 ? ageYears : null,
     caution,
     bmi,
