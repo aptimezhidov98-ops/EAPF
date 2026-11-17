@@ -690,7 +690,11 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
   const hasCaptoprilDiabeticNephropathyProfile = hasT1d && hasCkd && proteinuria24h !== null && Number.isFinite(proteinuria24h) && proteinuria24h >= 0.5
   const hopeVascularProfile = Number.isFinite(ageYears) && ageYears >= 55 && (hasCvdRisk || (hasDiabetes && has('Артериальная гипертензия', 'Хроническая болезнь почек', 'Дислипидемия', 'Ожирение')))
   const hasHighRisk = hasDiabetes && hasCvdRisk || (has('Сахарный диабет 2 типа') && has('Артериальная гипертензия'))
-  const hasMi = has('Острый инфаркт миокарда (первые 24 часа)', 'Состояние после инфаркта миокарда')
+  const hasAcuteMi24 = has('Острый инфаркт миокарда (первые 24 часа)')
+  const hasPriorMi = has('Состояние после инфаркта миокарда')
+  const hasMi = hasAcuteMi24 || hasPriorMi
+  const lvefRaw = patient.lvef?.trim() ? Number(patient.lvef) : null
+  const lvef = lvefRaw !== null && Number.isFinite(lvefRaw) && lvefRaw >= 5 && lvefRaw <= 85 ? lvefRaw : null
   const hasCoronary = has('Ишемическая болезнь сердца', 'Стабильная стенокардия', 'Состояние после инфаркта миокарда')
   const acr = (patient.acr || '').toLowerCase().replace(',', '.')
   const acrNumMatch = acr.match(/[0-9]+(?:\.[0-9]+)?/)
@@ -699,22 +703,51 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
   const acrIsMgMmol = /mg\s*\/\s*mmol|мг\s*\/\s*ммоль/.test(acr)
   const albuminuriaA2A3 = acrNum !== null && ((acrIsMgG && acrNum >= 30) || (acrIsMgMmol && acrNum >= 3))
   const albuminuriaA2 = acrNum !== null && ((acrIsMgG && acrNum >= 30 && acrNum < 300) || (acrIsMgMmol && acrNum >= 3 && acrNum < 30))
-  const cards = (ids: string[], studyMap: Record<string, string[]> = {}) => ids.map(id => {
+  const cards = (
+    ids: string[],
+    studyMap: Record<string, string[]> = {},
+    overrides: Record<string, Partial<Pick<AceDrugEvidence, 'evidenceTier' | 'shortConclusion' | 'notToOverinterpret'>>> = {}
+  ) => ids.map(id => {
     const drug = aceDrugEvidence.find(item => item.id === id)
     if (!drug) return null
     const relevantIds = studyMap[id]
-    return relevantIds ? { ...drug, studies: drug.studies.filter(study => relevantIds.includes(study.id)) } : drug
+    return { ...drug, ...overrides[id], ...(relevantIds ? { studies: drug.studies.filter(study => relevantIds.includes(study.id)) } : {}) }
   }).filter((drug): drug is AceDrugEvidence => Boolean(drug))
   const recommendations: EapfRecommendation[] = []
   if (hasUnspecifiedHf) {
     recommendations.push({ heading: 'Хроническая сердечная недостаточность без указанной ФВ', summary: 'Нужно уточнить ФВ ЛЖ. Исследования SOLVD и другие данные эналаприла относятся к систолической дисфункции / ХСНнФВ; автоматически переносить их на ХСН с сохранённой ФВ нельзя.', candidates: [], interpretation: 'После уточнения фенотипа СН программа сможет сопоставить препараты и соответствующие исследования.' })
   }
-  if (hasMi) {
+  if (hasAcuteMi24) {
     recommendations.push({
-      heading: 'Острый или перенесённый инфаркт миокарда',
-      summary: 'После ИМ иАПФ исследовались в нескольких крупных РКИ, но выбор конкретной молекулы зависит от времени после события, ФВ ЛЖ, наличия СН и стабильности гемодинамики.',
-      candidates: cards(['ramipril','captopril','trandolapril','lisinopril','zofenopril'], { ramipril: ['aire-1993'], captopril: ['save-1992','isis4-1995'], trandolapril: ['trace-1995'], lisinopril: ['gissi3-1994'], zofenopril: ['smile-1995','smile2-2003'] }),
-      interpretation: 'Не следует механически ранжировать эти препараты: исследования проводились в разных временных окнах и фенотипах (ранний острый ИМ, постинфарктная дисфункция ЛЖ, постинфарктная СН). Прямое превосходство одной молекулы над всеми остальными не установлено.'
+      heading: 'Острый инфаркт миокарда: первые 24 часа',
+      summary: 'Для очень раннего периода доступны отдельные РКИ лизиноприла, каптоприла и зофеноприла. CONSENSUS II не показало пользы немедленного внутривенного эналаприлата/эналаприла и выявило больше ранней гипотонии. Это не алгоритм неотложного лечения: сначала оцениваются гемодинамика, противопоказания и протокол лечения ОКС.',
+      candidates: cards(['lisinopril','captopril','zofenopril','enalapril'], {
+        lisinopril: ['gissi3-1994'], captopril: ['isis4-1995'], zofenopril: ['smile-1995'], enalapril: ['consensus-ii-1992']
+      }, {
+        enalapril: {
+          evidenceTier: 'Нейтральное РКИ при немедленном внутривенном старте',
+          shortConclusion: 'CONSENSUS II (6 090 пациентов) не показало снижения смертности при старте эналаприлата в/в в первые 24 часа после ИМ; ранняя гипотония была чаще (12% против 3%). Эти данные относятся к очень раннему внутривенному старту и не отменяют доказательства эналаприла при хронической ХСНнФВ.',
+          notToOverinterpret: 'Не переносить нейтральный результат CONSENSUS II на хроническую ХСНнФВ; одновременно не использовать SOLVD/CONSENSUS как доказательство пользы немедленного внутривенного старта при остром ИМ.'
+        }
+      }),
+      interpretation: 'В GISSI-3 и ISIS-4 абсолютное снижение ранней смертности было небольшим; в SMILE изучалась отдельная популяция переднего ИМ. Эти испытания не сравнивали все препараты напрямую. Нельзя выводить универсальное превосходство лизиноприла, каптоприла или зофеноприла.'
+    })
+  }
+  if (hasPriorMi) {
+    const postMiCandidates = [
+      ...(has('Сердечная недостаточность со сниженной ФВ') ? ['ramipril'] : []),
+      ...(lvef !== null && lvef <= 40 ? ['captopril'] : []),
+      ...(lvef !== null && lvef <= 35 ? ['trandolapril'] : []),
+    ]
+    recommendations.push({
+      heading: 'Состояние после инфаркта миокарда',
+      summary: lvef === null && !has('Сердечная недостаточность со сниженной ФВ')
+        ? 'Для привязки постинфарктных РКИ требуется ФВ ЛЖ и наличие/отсутствие клинической СН. Введите ФВ ЛЖ или уточните ХСНнФВ; без этого конкретные молекулы не ранжируются.'
+        : 'Постинфарктные исследования различались по фенотипу: AIRE — клиническая СН после ИМ; SAVE — ФВ ЛЖ ≤40%; TRACE — ФВ ЛЖ ≤35%.',
+      candidates: cards(postMiCandidates, {
+        ramipril: ['aire-1993'], captopril: ['save-1992'], trandolapril: ['trace-1995']
+      }),
+      interpretation: 'Эти исследования не были прямым сравнением молекул. Выбор зависит от ФВ ЛЖ, клинической СН, времени после ИМ, гемодинамики и современной фоновой терапии. При отсутствии ФВ/фенотипа доказательства не дают оснований ранжировать препараты.'
     })
   }
   if (hasHf) {
