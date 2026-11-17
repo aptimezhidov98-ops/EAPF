@@ -682,7 +682,7 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
     recommendations.push({
       heading: 'Хроническая сердечная недостаточность со сниженной ФВ',
       summary: 'Эналаприл имеет крупные landmark-РКИ по снижению смертности при ХСНнФВ; лизиноприл имеет данные по дозированию и госпитализациям. Выбор иАПФ должен вписываться в современную комплексную терапию ХСНнФВ.',
-      candidates: cards(['enalapril','lisinopril'], { enalapril: ['consensus-1987','solvd-treatment-1991','vheft2-1991'], lisinopril: ['atlas-1999'] }),
+      candidates: cards(['enalapril','lisinopril','trandolapril','cilazapril','spirapril'], { enalapril: ['consensus-1987','solvd-treatment-1991','vheft2-1991'], lisinopril: ['atlas-1999'], trandolapril: ['trace-1995'], cilazapril: ['cilazapril-captopril-hf-1995'], spirapril: ['cassis-spirapril-1995'] }),
       interpretation: 'Сопоставление 2018 года после propensity-score и дозового matching не выявило статистически значимых различий смертности между эналаприлом, лизиноприлом и рамиприлом. Это наблюдательные данные, а не доказательство строгой эквивалентности. Рекомендации современной терапии ХСН могут предпочитать ARNI у подходящих пациентов.'
     })
   }
@@ -690,7 +690,7 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
     recommendations.push({
       heading: 'Стабильная ишемическая болезнь сердца',
       summary: 'Периндоприл имеет прямое плацебо-контролируемое исследование EUROPA при стабильной ИБС. Рамиприл может быть релевантен при сочетании коронарного/сосудистого заболевания с высоким общим сосудистым риском.',
-      candidates: cards(['perindopril', ...(hopeVascularProfile ? ['ramipril'] : [])], { perindopril: ['europa-2003'], ramipril: ['hope-2000'] }),
+      candidates: cards(['perindopril', ...(hopeVascularProfile ? ['ramipril'] : []), 'quinapril'], { perindopril: ['europa-2003'], ramipril: ['hope-2000'], quinapril: ['quiet-2001'] }),
       interpretation: 'EUROPA и HOPE изучали разные популяции и не сравнивали молекулы между собой. В рамках данных нельзя утверждать, что периндоприл всегда лучше рамиприла или наоборот.'
     })
   }
@@ -698,7 +698,7 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
     recommendations.push({
       heading: 'ХБП с повышенной альбуминурией',
       summary: 'Имеется обоснование для рассмотрения блокады РААС на уровне класса. У беназеприла есть AIPRI по прогрессированию хронической почечной недостаточности; у имидаприла — небольшое исследование с альбуминурией при СД 1 типа; у рамиприла — данные MICRO-HOPE в группе высокого сердечно-сосудистого риска.',
-      candidates: cards(['benazepril', ...((hopeVascularProfile && hasDiabetes) || hasAaskProfile || hasReinProfile ? ['ramipril'] : []), ...(hasT1d ? ['imidapril'] : []), ...(hasT1d && albuminuriaA2 ? ['lisinopril'] : []), ...(hasCaptoprilDiabeticNephropathyProfile ? ['captopril'] : []), ...(hasDialysis ? ['fosinopril'] : [])], { benazepril: ['aipri-1996'], ramipril: [...(hasT2d ? ['micro-hope-2000'] : []), ...(hasAaskProfile ? ['aask-2002'] : []), ...(hasReinProfile ? ['rein-1997'] : [])], imidapril: ['japan-iddm-2002'], lisinopril: ['euclid-lisinopril-1997'], captopril: ['captopril-diabetic-nephropathy-1993'], fosinopril: (hasDialysis ? ['fosidial-results-2006'] : []) }),
+      candidates: cards(['benazepril', ...((hopeVascularProfile && hasDiabetes) || hasAaskProfile || hasReinProfile ? ['ramipril'] : []), ...(hasT1d ? ['imidapril'] : []), ...(hasT1d && albuminuriaA2 ? ['lisinopril'] : []), ...(hasCaptoprilDiabeticNephropathyProfile ? ['captopril'] : []), ...(hasT2d ? ['temocapril','delapril'] : []), ...(hasDialysis ? ['fosinopril'] : [])], { benazepril: ['aipri-1996'], ramipril: [...(hasT2d ? ['micro-hope-2000'] : []), ...(hasAaskProfile ? ['aask-2002'] : []), ...(hasReinProfile ? ['rein-1997'] : [])], imidapril: ['japan-iddm-2002'], lisinopril: ['euclid-lisinopril-1997'], captopril: ['captopril-diabetic-nephropathy-1993'], temocapril: ['temocapril-t2d-1999','temocapril-pk-1997'], delapril: ['demand-delapril-2011'], fosinopril: (hasDialysis ? ['fosidial-results-2006'] : []) }),
       interpretation: 'Эти исследования различаются по этиологии ХБП и конечным точкам: AIPRI изучал почечную комбинированную конечную точку; JAPAN-IDDM и некоторые другие исследования — главным образом альбуминурию; HOPE/MICRO-HOPE — высокий СС-риск. Нельзя сводить их в прямой рейтинг нефропротекции.'
     })
   } else if (hasCkd) {
@@ -737,7 +737,7 @@ export function buildEapfAceRecommendations(selected: string[], patient: Record<
     recommendations.push({
       heading: 'Артериальная гипертензия без специфического сопутствующего фенотипа',
       summary: 'иАПФ — один из возможных классов антигипертензивной терапии. Для обычной АГ доступные исследования в большей степени позволяют сравнивать контроль АД и переносимость; они не дают надёжного универсального рейтинга конкретных иАПФ по смертности.',
-      candidates: cards(['ramipril','enalapril','perindopril','lisinopril','benazepril','captopril'], { ramipril: [], enalapril: [], perindopril: ['ascot-bpla-2005'], lisinopril: ['allhat-lisinopril-2002'], benazepril: [], captopril: ['cappp-1999'] }),
+      candidates: cards(['ramipril','enalapril','perindopril','lisinopril','benazepril','captopril','cilazapril','moexipril','temocapril','alacepril', ...(hasT2d ? ['delapril'] : [])], { ramipril: [], enalapril: [], perindopril: ['ascot-bpla-2005'], lisinopril: ['allhat-lisinopril-2002'], benazepril: [], captopril: ['cappp-1999'], cilazapril: ['cilazapril-captopril-hf-1995'], moexipril: ['moexipril-captopril-htn-1996'], temocapril: ['temocapril-t2d-1999','temocapril-pk-1997'], alacepril: [], delapril: ['demand-delapril-2011'] }),
       interpretation: 'При выборе учитывать целевое АД, возраст, рСКФ, калий, альбуминурию, сердечную недостаточность, ИБС, переносимость, кратность приёма, стоимость/доступность и локальную инструкцию.'
     })
   }
